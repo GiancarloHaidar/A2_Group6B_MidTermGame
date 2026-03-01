@@ -17,21 +17,21 @@ class Player {
     this.facingRight = true;
 
     // Input flags (set by gameScreen.js)
-    this.inputLeft  = false;
+    this.inputLeft = false;
     this.inputRight = false;
-    this.inputJump  = false; // single-frame flag
-    this.inputDown  = false; // held: fast-fall
+    this.inputJump = false; // single-frame flag
+    this.inputDown = false; // held: fast-fall
   }
 
   update(platforms) {
     // ── Horizontal movement ──────────────────────────────────
     let targetVx = 0;
-    if (this.inputLeft)  targetVx -= MOVE_SPEED;
+    if (this.inputLeft) targetVx -= MOVE_SPEED;
     if (this.inputRight) targetVx += MOVE_SPEED;
     this.vx = lerp(this.vx, targetVx, GROUND_FRICTION);
 
     if (this.inputRight) this.facingRight = true;
-    if (this.inputLeft)  this.facingRight = false;
+    if (this.inputLeft) this.facingRight = false;
 
     // ── Jump ────────────────────────────────────────────────
     if (this.inputJump && this.onGround) {
@@ -42,9 +42,10 @@ class Player {
 
     // ── Gravity ─────────────────────────────────────────────
     let gravThisFrame = GRAVITY;
-    if (this.inputDown && !this.onGround) gravThisFrame = GRAVITY * FAST_FALL_MULTIPLIER;
+    if (this.inputDown && !this.onGround)
+      gravThisFrame = GRAVITY * FAST_FALL_MULTIPLIER;
     this.vy += gravThisFrame;
-    this.vy  = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
+    this.vy = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
     // ── Integrate position ───────────────────────────────────
     this.x += this.vx;
@@ -75,13 +76,14 @@ class Player {
       this.x >= p.x + p.w ||
       this.y + this.h <= p.y ||
       this.y >= p.y + p.h
-    ) return;
+    )
+      return;
 
     // Calculate overlap on each axis
-    let overlapLeft  = (this.x + this.w) - p.x;
-    let overlapRight = (p.x + p.w) - this.x;
-    let overlapTop   = (this.y + this.h) - p.y;
-    let overlapBot   = (p.y + p.h) - this.y;
+    let overlapLeft = this.x + this.w - p.x;
+    let overlapRight = p.x + p.w - this.x;
+    let overlapTop = this.y + this.h - p.y;
+    let overlapBot = p.y + p.h - this.y;
 
     // Find smallest overlap (push out that way)
     let minX = min(overlapLeft, overlapRight);
@@ -129,8 +131,18 @@ class Player {
     stroke(180, 160, 120);
     strokeWeight(2);
     if (this.onGround) {
-      line(this.x + this.w * 0.3, this.y + this.h, this.x + this.w * 0.2, this.y + this.h + 8);
-      line(this.x + this.w * 0.7, this.y + this.h, this.x + this.w * 0.8, this.y + this.h + 8);
+      line(
+        this.x + this.w * 0.3,
+        this.y + this.h,
+        this.x + this.w * 0.2,
+        this.y + this.h + 8,
+      );
+      line(
+        this.x + this.w * 0.7,
+        this.y + this.h,
+        this.x + this.w * 0.8,
+        this.y + this.h + 8,
+      );
     }
     noStroke();
   }

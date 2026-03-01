@@ -20,8 +20,12 @@ function setup() {
 
 function draw() {
   switch (currentScreen) {
-    case "game": drawGame(); break;
-    case "win":  drawWinScreen(); break;
+    case "game":
+      drawGame();
+      break;
+    case "win":
+      drawWinScreen();
+      break;
   }
 }
 
@@ -37,8 +41,8 @@ function drawWinScreen() {
   // Green gradient inside play column
   for (let i = 0; i < 8; i++) {
     let t = i / 8;
-    fill(lerp(20,10,t), lerp(60,30,t), lerp(20,15,t));
-    rect(ox, i * height/8, PLAY_WIDTH, height/8);
+    fill(lerp(20, 10, t), lerp(60, 30, t), lerp(20, 15, t));
+    rect(ox, (i * height) / 8, PLAY_WIDTH, height / 8);
   }
 
   // Stars burst background
@@ -66,7 +70,7 @@ function drawWinScreen() {
   text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 + 10);
 
   // Restart prompt
-  let blink = (frameCount % 50) < 30;
+  let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(14);
     fill(160, 200, 160);
@@ -80,7 +84,7 @@ function drawWinStar(x, y, r1, r2, pts) {
   beginShape();
   for (let i = 0; i < pts * 2; i++) {
     let angle = (PI / pts) * i - PI / 2;
-    let r = (i % 2 === 0) ? r2 : r1;
+    let r = i % 2 === 0 ? r2 : r1;
     vertex(x + cos(angle) * r, y + sin(angle) * r);
   }
   endShape(CLOSE);
@@ -90,7 +94,7 @@ function keyPressed() {
   if (currentScreen === "game") {
     gameKeyPressed(keyCode);
   }
-  if (currentScreen === "win" && (key === 'r' || key === 'R')) {
+  if (currentScreen === "win" && (key === "r" || key === "R")) {
     currentScreen = "game";
     initGame();
   }
