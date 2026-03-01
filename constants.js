@@ -18,15 +18,36 @@ const MAX_FALL_SPEED  = 18;   // terminal velocity (px/frame)
 const FAST_FALL_MULTIPLIER = 3.0; // gravity multiplier when holding DOWN/S in air
 
 // ── Energy / Fatigue ─────────────────────────────────────────
-const ENERGY_MAX              = 100;  // full bar value
-const ENERGY_DRAIN_BASE       = 7;    // units/sec drained while moving (walking or airborne)
-const ENERGY_DRAIN_SPRINT     = 10;   // extra units/sec when speed magnitude > threshold
-const ENERGY_SPRINT_THRESHOLD = 2.8;  // px/frame speed that counts as sprinting
-const ENERGY_LOW_THRESHOLD    = 25;   // below this: warning flash + hard speed penalty
-const ENERGY_SPEED_MIN        = 0.35; // fraction of MOVE_SPEED kept at zero energy
-// Checkpoint restore: +40% of max, hard cap at 70% of max (never fully refills)
-const ENERGY_CHECKPOINT_ADD   = 0.40;
-const ENERGY_CHECKPOINT_CAP   = 0.70;
+// Model: movement-distance based, not time based.
+// Energy only drains when the player actually moves.
+// Idle on a platform = zero drain.  Careful pace = sustainable.
+// Mistakes (falls, spam jumps, fast movement) punish.
+const ENERGY_MAX = 100;
+
+// Per px of horizontal distance traveled (applies on ground AND in air).
+// Clean run (30 platforms, ~80px walk each): costs ~30 energy from horizontal alone.
+const ENERGY_DRAIN_HORIZ = 0.004;
+
+// Flat cost deducted once per jump at the moment of takeoff.
+// 30 jumps = 12 energy. Spam jumping burns budget.
+const ENERGY_DRAIN_JUMP = 0.4;
+
+// Extra drain per frame when downward vy exceeds comfortable fall speed.
+// Only fires on fast falls — a normal landing costs nothing extra.
+const ENERGY_DRAIN_FALL_OVER = 0.08;
+const ENERGY_FALL_THRESHOLD  = 9;    // px/frame downward — below this, free fall
+
+// Deadzone: speed below this contributes nothing to drain (kills idle jitter).
+const ENERGY_MOVE_DEADZONE = 0.4;    // px/frame
+
+// Below this the bar turns red and speed penalty kicks in hard.
+const ENERGY_LOW_THRESHOLD = 25;
+// Minimum fraction of MOVE_SPEED kept at zero energy (player can still reach a platform).
+const ENERGY_SPEED_MIN = 0.35;
+
+// Checkpoint restore: +40% of max, hard cap at 70% of max.
+const ENERGY_CHECKPOINT_ADD = 0.40;
+const ENERGY_CHECKPOINT_CAP = 0.70;
 
 // ── UI layout ────────────────────────────────────────────────
 const UI_TOP_RESERVE = 56;  // px — widened from 48 to fit energy bar + zone label

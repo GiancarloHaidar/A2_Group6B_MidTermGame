@@ -55,26 +55,27 @@ class Player {
   }
 
   update(platforms) {
-    // ── Delta time ───────────────────────────────────────────
-    // p5's deltaTime is ms since last frame. Dividing by 1000 gives
-    // seconds, making all energy math frame-rate independent.
-    let dt = deltaTime / 1000;
-
-    // ── Energy drain ─────────────────────────────────────────
-    // Drain whenever the player is airborne OR pressing a move key.
-    // Idle means: on the ground AND no horizontal input pressed.
-    // Speed magnitude drives the sprint surcharge check.
+    // ── Energy: distance-based drain ────────────────────────
+    // Charged per pixel traveled, not per second.
+    // Standing still = zero drain. Careful movement = sustainable.
+    // Mistakes (falls, spam jumps, sustained speed) punish.
     if (!this.isExhausted) {
-      let isMoving = this.inputLeft || this.inputRight || !this.onGround;
-      if (isMoving) {
-        let speedMag = sqrt(this.vx * this.vx + this.vy * this.vy);
-        let drain    = ENERGY_DRAIN_BASE;
-        if (speedMag > ENERGY_SPRINT_THRESHOLD) drain += ENERGY_DRAIN_SPRINT;
-        this.energy -= drain * dt;
-        if (this.energy <= 0) {
-          this.energy      = 0;
-          this.isExhausted = true;
-        }
+      // Horizontal cost: proportional to |vx| this frame.
+      // Deadzone filters out friction coast / physics jitter.
+      let absVx = abs(this.vx);
+      if (absVx > ENERGY_MOVE_DEADZONE) {
+        this.energy -= ENERGY_DRAIN_HORIZ * absVx;
+      }
+
+      // Fall surcharge: only when falling fast (vy large & positive = downward).
+      // Normal gravity descent costs nothing; a hard fall after a miss does.
+      if (this.vy > ENERGY_FALL_THRESHOLD) {
+        this.energy -= ENERGY_DRAIN_FALL_OVER * (this.vy - ENERGY_FALL_THRESHOLD);
+      }
+
+      if (this.energy <= 0) {
+        this.energy      = 0;
+        this.isExhausted = true;
       }
     }
 
@@ -96,8 +97,12 @@ class Player {
     // ── Jump ────────────────────────────────────────────────
     // Exhausted player cannot initiate a jump; they fall where they stand.
     if (this.inputJump && this.onGround && !this.isExhausted) {
-      this.vy = JUMP_FORCE;
+      this.vy    = JUMP_FORCE;
       this.onGround = false;
+      // Flat energy cost per jump. Deducted at takeoff, not over time.
+      // Spam-jumping or missing a platform and re-jumping repeatedly burns budget.
+      this.energy = max(0, this.energy - ENERGY_DRAIN_JUMP);
+      if (this.energy === 0) this.isExhausted = true;
     }
     this.inputJump = false; // consume every frame regardless
 
