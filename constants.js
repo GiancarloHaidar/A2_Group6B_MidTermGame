@@ -14,6 +14,14 @@ const JUMP_FORCE     = -11.5; // negative = upward (px/frame)
 const GRAVITY        = 0.5;  // px/frame² added each frame
 const MAX_FALL_SPEED = 18;   // terminal velocity (px/frame)
 
+// ── Fast-fall ────────────────────────────────────────────────
+const FAST_FALL_MULTIPLIER = 3.0; // gravity multiplier when holding DOWN/S in air
+
+// ── UI layout ────────────────────────────────────────────────
+// Reserve this many px at the top for future UI (energy bar etc.)
+// The game world renders behind this area; only screen-space UI draws here.
+const UI_TOP_RESERVE = 48;  // px  ← increase when you add the energy bar
+
 // ── Camera ───────────────────────────────────────────────────
 const CAM_LERP     = 0.1;   // 0 = no follow, 1 = instant
 const CAM_ANCHOR_Y = 0.55;  // fraction of screen height where player is held (0.5 = center)

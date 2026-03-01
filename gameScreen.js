@@ -4,7 +4,7 @@
 // ============================================================
 
 // ── Input state ────────────────────────────────────────────
-let _keys = { left: false, right: false };
+let _keys = { left: false, right: false, down: false };
 
 function initGame() {
   // Build platform list from JSON (loaded in preload)
@@ -30,6 +30,7 @@ function drawGame() {
   // ── Update ──────────────────────────────────────────────
   player.inputLeft  = _keys.left;
   player.inputRight = _keys.right;
+  player.inputDown  = _keys.down;
   player.update(platforms);
   cam.update(player);
 
@@ -75,39 +76,43 @@ function drawPlatforms() {
 }
 
 function drawUI() {
-  // ── Altitude indicator ────────────────────────────────
-  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
-  let maxAlt   = LEVEL_HEIGHT;
-  let pct      = altitude / maxAlt;
+  // ── Top bar (reserved for future energy bar) ──────────────
+  // Draw a subtle dark strip so it reads as a HUD zone.
+  // When you add the energy bar, draw it inside y=0..UI_TOP_RESERVE.
+  fill(10, 12, 20, 210);
+  noStroke();
+  rect(0, 0, width, UI_TOP_RESERVE);
 
-  // Altitude bar (right side)
-  let barX = width - 28;
-  let barH = height * 0.6;
-  let barY = height * 0.2;
+  // ── Altitude indicator (right side, below top bar) ────────
+  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
+  let pct      = altitude / LEVEL_HEIGHT;
+
+  let barX    = width - 28;
+  let barTopY = UI_TOP_RESERVE + height * 0.04;
+  let barH    = height * 0.55;
 
   fill(255, 255, 255, 15);
-  rect(barX, barY, 8, barH, 4);
+  rect(barX, barTopY, 8, barH, 4);
 
   fill(140, 210, 255, 180);
   let fillH = barH * pct;
-  rect(barX, barY + barH - fillH, 8, fillH, 4);
+  rect(barX, barTopY + barH - fillH, 8, fillH, 4);
 
-  // Altitude text
   fill(180, 220, 255, 200);
   noStroke();
   textAlign(RIGHT, TOP);
   textSize(11);
   textFont("monospace");
-  text(nf(floor(altitude), 1) + "m", barX - 4, barY);
+  text(floor(altitude) + "m", barX - 4, barTopY);
 
-  // ── Controls hint (fade after 5 sec) ─────────────────
+  // ── Controls hint (fades after 5 sec) ────────────────────
   if (millis() < 5000) {
     let alpha = map(millis(), 3000, 5000, 200, 0);
     alpha = constrain(alpha, 0, 200);
     fill(255, 255, 255, alpha);
     textAlign(CENTER, BOTTOM);
     textSize(13);
-    text("A / D or ← → to move   SPACE to jump", width / 2, height - 20);
+    text("A/D or ← → move   ↑/W/Space jump   ↓/S fast-fall", width / 2, height - 20);
   }
 
   textAlign(LEFT, BASELINE); // reset
@@ -115,12 +120,15 @@ function drawUI() {
 
 // ── Input routing ────────────────────────────────────────────
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = true;
-  if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;
-  if (kc === 32) player.inputJump = true; // SPACE
+  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = true;  // ← or A
+  if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;  // → or D
+  if (kc === DOWN_ARROW  || kc === 83) _keys.down  = true;  // ↓ or S
+  if (kc === UP_ARROW    || kc === 87 || kc === 32)         // ↑ or W or SPACE
+    player.inputJump = true;
 }
 
 function gameKeyReleased(kc) {
   if (kc === LEFT_ARROW  || kc === 65) _keys.left  = false;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
+  if (kc === DOWN_ARROW  || kc === 83) _keys.down  = false;
 }

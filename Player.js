@@ -20,6 +20,7 @@ class Player {
     this.inputLeft  = false;
     this.inputRight = false;
     this.inputJump  = false; // single-frame flag
+    this.inputDown  = false; // held: fast-fall
   }
 
   update(platforms) {
@@ -40,7 +41,9 @@ class Player {
     this.inputJump = false; // consume
 
     // ── Gravity ─────────────────────────────────────────────
-    this.vy += GRAVITY;
+    let gravThisFrame = GRAVITY;
+    if (this.inputDown && !this.onGround) gravThisFrame = GRAVITY * FAST_FALL_MULTIPLIER;
+    this.vy += gravThisFrame;
     this.vy  = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
     // ── Integrate position ───────────────────────────────────
