@@ -10,13 +10,7 @@ function initGame() {
   // Build platform list from JSON (loaded in preload)
   platforms = [];
   for (let p of levelData.platforms) {
-    platforms.push({
-      x: p.x,
-      y: p.y,
-      w: p.w,
-      h: p.h,
-      color: p.color || [80, 80, 90],
-    });
+    platforms.push({ x: p.x, y: p.y, w: p.w, h: p.h, color: p.color || [80, 80, 90] });
   }
 
   // Spawn player at JSON start position
@@ -24,9 +18,9 @@ function initGame() {
 
   cam = new Camera2D();
   // Snap camera to player immediately (no lerp on first frame)
-  cam.x = player.x + player.w / 2 - width / 2;
+  cam.x = player.x + player.w / 2 - width  / 2;
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
-  cam.x = constrain(cam.x, 0, max(0, LEVEL_WIDTH - width));
+  cam.x = constrain(cam.x, 0, max(0, LEVEL_WIDTH  - width));
   cam.y = constrain(cam.y, 0, max(0, LEVEL_HEIGHT - height));
 }
 
@@ -34,7 +28,7 @@ function drawGame() {
   background(18, 20, 30);
 
   // ── Update ──────────────────────────────────────────────
-  player.inputLeft = _keys.left;
+  player.inputLeft  = _keys.left;
   player.inputRight = _keys.right;
   player.update(platforms);
   cam.update(player);
@@ -83,8 +77,8 @@ function drawPlatforms() {
 function drawUI() {
   // ── Altitude indicator ────────────────────────────────
   let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
-  let maxAlt = LEVEL_HEIGHT;
-  let pct = altitude / maxAlt;
+  let maxAlt   = LEVEL_HEIGHT;
+  let pct      = altitude / maxAlt;
 
   // Altitude bar (right side)
   let barX = width - 28;
@@ -121,12 +115,12 @@ function drawUI() {
 
 // ── Input routing ────────────────────────────────────────────
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW || kc === 65) _keys.left = true;
+  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = true;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;
   if (kc === 32) player.inputJump = true; // SPACE
 }
 
 function gameKeyReleased(kc) {
-  if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
+  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = false;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
 }
