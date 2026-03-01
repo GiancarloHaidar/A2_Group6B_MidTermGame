@@ -17,9 +17,19 @@ const MAX_FALL_SPEED  = 18;   // terminal velocity (px/frame)
 // ── Fast-fall ────────────────────────────────────────────────
 const FAST_FALL_MULTIPLIER = 3.0; // gravity multiplier when holding DOWN/S in air
 
+// ── Energy / Fatigue ─────────────────────────────────────────
+const ENERGY_MAX              = 100;  // full bar value
+const ENERGY_DRAIN_BASE       = 7;    // units/sec drained while moving (walking or airborne)
+const ENERGY_DRAIN_SPRINT     = 10;   // extra units/sec when speed magnitude > threshold
+const ENERGY_SPRINT_THRESHOLD = 2.8;  // px/frame speed that counts as sprinting
+const ENERGY_LOW_THRESHOLD    = 25;   // below this: warning flash + hard speed penalty
+const ENERGY_SPEED_MIN        = 0.35; // fraction of MOVE_SPEED kept at zero energy
+// Checkpoint restore: +40% of max, hard cap at 70% of max (never fully refills)
+const ENERGY_CHECKPOINT_ADD   = 0.40;
+const ENERGY_CHECKPOINT_CAP   = 0.70;
+
 // ── UI layout ────────────────────────────────────────────────
-// Reserve this many px at the top for future UI (energy bar etc.)
-const UI_TOP_RESERVE = 48;  // px  ← increase when you add the energy bar
+const UI_TOP_RESERVE = 56;  // px — widened from 48 to fit energy bar + zone label
 
 // ── Camera ───────────────────────────────────────────────────
 const CAM_LERP     = 0.1;   // 0 = no follow, 1 = instant
