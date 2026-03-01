@@ -64,7 +64,7 @@ class Player {
     }
 
     // Clamp horizontal to level width
-    this.x = constrain(this.x, 0, LEVEL_WIDTH - this.w);
+    this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
   }
 
   // AABB: stand on top, block sides, block ceiling
