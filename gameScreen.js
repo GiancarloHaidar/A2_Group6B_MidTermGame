@@ -158,32 +158,25 @@ function drawScreenBackground() {
 function drawColumnBackground() {
   noStroke();
 
-  // ── Sky gradient — deep navy at ground, cooler blue-grey at summit ──
-  let strips = 16;
+  // Sky gradient: deep navy at ground, cool blue-grey at summit
+  let strips = 20;
   let stripH = LEVEL_HEIGHT / strips;
   for (let i = 0; i < strips; i++) {
-    let t = 1 - (i / strips); // t=1 at top, t=0 at ground
-    fill(lerp(14,22,t), lerp(20,38,t), lerp(38,65,t));
+    let t = 1 - (i / strips);
+    fill(lerp(12,20,t), lerp(18,36,t), lerp(35,62,t));
     rect(0, i * stripH, PLAY_WIDTH, stripH);
   }
 
-  // ── Left wall surface — subtle stone texture lines ───────────
-  // These are purely decorative vertical markings that make left/right
-  // walls feel like physical surfaces the player is climbing along.
-  stroke(255, 255, 255, 8);
+  // Left wall surface lines (decorative — reinforces wall-climb feel)
+  stroke(255, 255, 255, 6);
   strokeWeight(1);
-  for (let lx = 6; lx <= 36; lx += 10) {
-    line(lx, 0, lx, LEVEL_HEIGHT);
-  }
-  // Right wall
-  for (let rx = PLAY_WIDTH - 6; rx >= PLAY_WIDTH - 36; rx -= 10) {
-    line(rx, 0, rx, LEVEL_HEIGHT);
-  }
+  for (let lx = 4; lx <= 22; lx += 9) line(lx, 0, lx, LEVEL_HEIGHT);
+  for (let rx = PLAY_WIDTH-4; rx >= PLAY_WIDTH-22; rx -= 9) line(rx, 0, rx, LEVEL_HEIGHT);
 
-  // ── Side vignette ─────────────────────────────────────────────
+  // Side vignette — stronger gradient for clean lane separation
   noStroke();
-  for (let i = 0; i < 40; i++) {
-    let a = map(i, 0, 40, 130, 0);
+  for (let i = 0; i < 50; i++) {
+    let a = map(i, 0, 50, 160, 0);
     fill(8, 10, 16, a);
     rect(i, 0, 1, LEVEL_HEIGHT);
     rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
@@ -197,62 +190,52 @@ function drawPlatforms() {
     if (p.isFinish) continue;
 
     const lk = p.laneKey || 'C';
-    const isWall = (lk === 'LL' || lk === 'RR');
-    const isBridge = (p.section === 'Bridge' || p.section === 'Bridge2'
-                   || p.section === 'Mid Bridge' || p.section === 'Mid Bridge2');
-    const isPeak   = (p.section === 'Peak');
-    const isStep   = (p.section === 'Left Ledge' || p.section === 'Right Ledge');
+    const isWall     = (lk === 'LL' || lk === 'RR');
+    const isPeak     = (p.section === 'Peak');
+    const isZigzag   = (p.section === 'Zigzag');
+    const isNarrow   = (p.w < 155);
 
-    // ── Base fill ─────────────────────────────────────────
+    // Base rectangle
     fill(p.color[0], p.color[1], p.color[2]);
     rect(p.x, p.y, p.w, p.h, 3);
 
-    // ── Top surface highlight ──────────────────────────────
-    // Wider (easier) platforms get a brighter highlight — visual cue for safety
-    let hlAlpha = map(p.w, 100, 230, 10, 38);
-    fill(255, 255, 255, constrain(hlAlpha, 10, 38));
+    // Top-surface highlight — brightness encodes safety (wide=bright, narrow=dim)
+    let hlAlpha = map(p.w, 130, 225, 12, 42);
+    fill(255, 255, 255, constrain(hlAlpha, 12, 42));
     rect(p.x, p.y, p.w, 4, 3, 3, 0, 0);
 
-    // ── Wall platform: stone-edge on the anchored side ────
+    // Wall anchor edge: bright sliver on the wall-facing side
     if (isWall) {
-      let edgeX = (lk === 'LL') ? p.x : p.x + p.w - 4;
-      fill(255, 255, 255, 14);
       noStroke();
-      rect(edgeX, p.y, 4, p.h, lk === 'LL' ? 3 : 0, lk === 'RR' ? 3 : 0, lk === 'RR' ? 3 : 0, lk === 'LL' ? 3 : 0);
+      fill(255, 255, 255, 18);
+      if (lk === 'LL') rect(p.x, p.y, 3, p.h, 3, 0, 0, 3);
+      else             rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
     }
 
-    // ── Bridge: subtle teal underside glow ────────────────
-    if (isBridge) {
-      fill(100, 200, 200, 20);
-      noStroke();
-      rect(p.x, p.y + p.h - 4, p.w, 4, 0, 0, 3, 3);
-    }
-
-    // ── Peak: amber warning outline on narrow sections ────
-    if (isPeak || isStep) {
+    // Peak / narrow platforms: amber outline — communicates "be careful"
+    if (isPeak || (isZigzag && isNarrow)) {
       noFill();
-      stroke(220, 150, 60, 55);
+      stroke(215, 145, 55, 50);
       strokeWeight(1);
       rect(p.x, p.y, p.w, p.h, 3);
       noStroke();
     }
 
-    // ── Drop shadow beneath every platform ────────────────
+    // Drop shadow (gives depth, helps read platform vs background)
     noStroke();
-    fill(0, 0, 0, 28);
-    rect(p.x + 2, p.y + p.h, p.w - 2, 5, 0, 0, 3, 3);
+    fill(0, 0, 0, 32);
+    rect(p.x + 2, p.y + p.h, p.w - 4, 5, 0, 0, 3, 3);
   }
 
-  // ── Finish platform ───────────────────────────────────────
+  // Finish platform
   if (finishPlatform) {
     const fp = finishPlatform;
     fill(fp.color[0], fp.color[1], fp.color[2]);
     rect(fp.x, fp.y, fp.w, fp.h, 3);
-    fill(255, 255, 255, 40);
+    fill(255, 255, 255, 42);
     rect(fp.x, fp.y, fp.w, 4, 3, 3, 0, 0);
-    // Green glow beneath
-    fill(120, 220, 120, 18);
-    rect(fp.x, fp.y + fp.h, fp.w, 8, 0, 0, 4, 4);
+    fill(100, 210, 100, 22);
+    rect(fp.x + 2, fp.y + fp.h, fp.w - 4, 6, 0, 0, 4, 4);
   }
 }
 
