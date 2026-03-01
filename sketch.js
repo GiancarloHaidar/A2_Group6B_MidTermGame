@@ -16,6 +16,7 @@ function preload() {
 }
 
 function setup() {
+  // PARENT: document.body — p5 appends canvas here, CSS keeps body margin-free
   createCanvas(windowWidth, windowHeight);
   initGame(); // defined in gameScreen.js
 }
@@ -42,5 +43,8 @@ function keyReleased() {
 }
 
 function windowResized() {
+  // Resize the p5 drawing buffer to match the new viewport exactly.
+  // The camera's constrain() calls in Camera2D.update() use width/height
+  // which p5 updates automatically, so no camera code needs to change.
   resizeCanvas(windowWidth, windowHeight);
 }
