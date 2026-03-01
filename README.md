@@ -1,46 +1,55 @@
-// ============================================================
-// sketch.js — Conductor / Router
-// Loads assets, manages currentScreen, routes input
-// ============================================================
+# A2_Group6B_MidTermGame
 
-let currentScreen = "game"; // "start" | "game" | "win" | "lose"
+GBDA 302 - Global Digital Project 2 - Assignment 2: Mid-Term Game (Group Project) - playtesting
 
-// Shared game objects (created in gameScreen.js)
-let player;
-let platforms;
-let cam;
-let levelData;
+## Project Title
 
-function preload() {
-levelData = loadJSON("level1.json");
-}
+Give your project a short, clear title (e.g., "Side Quest Week 1: Interactive Shape Switcher").
 
-function setup() {
-createCanvas(windowWidth, windowHeight);
-initGame(); // defined in gameScreen.js
-}
+---
 
-function draw() {
-switch (currentScreen) {
-case "game":
-drawGame();
-break;
-// Future screens plug in here
-}
-}
+## Group Number (only for group work)
 
-function keyPressed() {
-if (currentScreen === "game") {
-gameKeyPressed(keyCode);
-}
-}
+List your group number.
 
-function keyReleased() {
-if (currentScreen === "game") {
-gameKeyReleased(keyCode);
-}
-}
+---
 
-function windowResized() {
-resizeCanvas(windowWidth, windowHeight);
-}
+## Description
+
+Briefly describe what your project does.  
+Explain what the user will see, how they can interact, and what inspired the design.
+
+Example:
+
+> This project lets users switch between shapes using keyboard inputs.  
+> It explores how visual feedback can communicate accessibility states.
+
+---
+
+## Interaction Instructions
+
+Describe how to use or play your project.
+
+- How does the user start?
+- What controls or keys do they use?
+- Any important visual or audio feedback to watch for?
+
+Example:
+
+> Press `S` to switch shapes and `R` to reset the canvas.
+
+## Assets
+
+List any images, sounds, or other files used in your assets/ folder.
+Include in-text citations for all assets that are not your own, and connect them to your reference list.
+
+Example:
+
+> - `assets/sound/beep.mp3` (created in GarageBand)
+> - `assets/image/background.png` (original artwork)
+
+---
+
+## References
+
+Connect your in-text citations to the reference list along with additional sources that informed your design but were not directly cited. Provide all citations using the ACM reference format.
