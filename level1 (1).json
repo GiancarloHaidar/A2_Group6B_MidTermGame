@@ -8,11 +8,7 @@
       "y": 3950,
       "w": 800,
       "h": 50,
-      "color": [
-        42,
-        50,
-        60
-      ],
+      "color": [42, 50, 60],
       "zone": "ground",
       "section": "ground"
     },
@@ -21,11 +17,7 @@
       "y": 3897,
       "w": 220,
       "h": 18,
-      "color": [
-        49,
-        59,
-        79
-      ],
+      "color": [49, 59, 79],
       "zone": "Tutorial",
       "section": "Tutorial",
       "laneKey": "C"
@@ -35,11 +27,7 @@
       "y": 3848,
       "w": 210,
       "h": 18,
-      "color": [
-        50,
-        59,
-        79
-      ],
+      "color": [50, 59, 79],
       "zone": "Tutorial",
       "section": "Tutorial",
       "laneKey": "C"
@@ -49,11 +37,7 @@
       "y": 3797,
       "w": 210,
       "h": 18,
-      "color": [
-        50,
-        60,
-        79
-      ],
+      "color": [50, 60, 79],
       "zone": "Tutorial",
       "section": "Tutorial",
       "laneKey": "C"
@@ -63,11 +47,7 @@
       "y": 3745,
       "w": 205,
       "h": 18,
-      "color": [
-        51,
-        60,
-        80
-      ],
+      "color": [51, 60, 80],
       "zone": "Tutorial",
       "section": "Tutorial",
       "laneKey": "C"
@@ -77,11 +57,7 @@
       "y": 3691,
       "w": 200,
       "h": 18,
-      "color": [
-        51,
-        61,
-        80
-      ],
+      "color": [51, 61, 80],
       "zone": "Tutorial",
       "section": "Tutorial",
       "laneKey": "C"
@@ -91,11 +67,7 @@
       "y": 3636,
       "w": 190,
       "h": 18,
-      "color": [
-        56,
-        67,
-        85
-      ],
+      "color": [56, 67, 85],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "L"
@@ -105,11 +77,7 @@
       "y": 3578,
       "w": 185,
       "h": 18,
-      "color": [
-        57,
-        67,
-        85
-      ],
+      "color": [57, 67, 85],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "LL"
@@ -119,11 +87,7 @@
       "y": 3520,
       "w": 175,
       "h": 18,
-      "color": [
-        57,
-        68,
-        85
-      ],
+      "color": [57, 68, 85],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "L"
@@ -133,11 +97,7 @@
       "y": 3459,
       "w": 180,
       "h": 18,
-      "color": [
-        58,
-        68,
-        86
-      ],
+      "color": [58, 68, 86],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "LL"
@@ -147,11 +107,7 @@
       "y": 3398,
       "w": 170,
       "h": 18,
-      "color": [
-        59,
-        69,
-        86
-      ],
+      "color": [59, 69, 86],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "L"
@@ -161,11 +117,7 @@
       "y": 3335,
       "w": 175,
       "h": 18,
-      "color": [
-        59,
-        70,
-        87
-      ],
+      "color": [59, 70, 87],
       "zone": "Left Wall",
       "section": "Left Wall",
       "laneKey": "LL"
@@ -175,11 +127,7 @@
       "y": 3272,
       "w": 210,
       "h": 18,
-      "color": [
-        64,
-        75,
-        91
-      ],
+      "color": [64, 75, 91],
       "zone": "Bridge",
       "section": "Bridge",
       "laneKey": "C"
@@ -189,11 +137,7 @@
       "y": 3210,
       "w": 200,
       "h": 18,
-      "color": [
-        65,
-        76,
-        92
-      ],
+      "color": [65, 76, 92],
       "zone": "Bridge",
       "section": "Bridge",
       "laneKey": "C"
@@ -203,11 +147,7 @@
       "y": 3146,
       "w": 185,
       "h": 18,
-      "color": [
-        69,
-        81,
-        96
-      ],
+      "color": [69, 81, 96],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "R"
@@ -217,11 +157,7 @@
       "y": 3082,
       "w": 180,
       "h": 18,
-      "color": [
-        70,
-        81,
-        97
-      ],
+      "color": [70, 81, 97],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "RR"
@@ -231,11 +167,7 @@
       "y": 3016,
       "w": 175,
       "h": 18,
-      "color": [
-        71,
-        82,
-        97
-      ],
+      "color": [71, 82, 97],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "R"
@@ -245,11 +177,7 @@
       "y": 2951,
       "w": 180,
       "h": 18,
-      "color": [
-        72,
-        83,
-        98
-      ],
+      "color": [72, 83, 98],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "RR"
@@ -259,11 +187,7 @@
       "y": 2884,
       "w": 170,
       "h": 18,
-      "color": [
-        72,
-        84,
-        98
-      ],
+      "color": [72, 84, 98],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "R"
@@ -273,11 +197,7 @@
       "y": 2816,
       "w": 170,
       "h": 18,
-      "color": [
-        73,
-        84,
-        99
-      ],
+      "color": [73, 84, 99],
       "zone": "Right Wall",
       "section": "Right Wall",
       "laneKey": "RR"
@@ -287,11 +207,7 @@
       "y": 2748,
       "w": 195,
       "h": 18,
-      "color": [
-        78,
-        89,
-        103
-      ],
+      "color": [78, 89, 103],
       "zone": "Bridge2",
       "section": "Bridge2",
       "laneKey": "C"
@@ -301,11 +217,7 @@
       "y": 2681,
       "w": 185,
       "h": 18,
-      "color": [
-        79,
-        90,
-        104
-      ],
+      "color": [79, 90, 104],
       "zone": "Bridge2",
       "section": "Bridge2",
       "laneKey": "C"
@@ -315,11 +227,7 @@
       "y": 2613,
       "w": 175,
       "h": 18,
-      "color": [
-        83,
-        94,
-        108
-      ],
+      "color": [83, 94, 108],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "L"
@@ -329,11 +237,7 @@
       "y": 2545,
       "w": 170,
       "h": 18,
-      "color": [
-        84,
-        95,
-        109
-      ],
+      "color": [84, 95, 109],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "C"
@@ -343,11 +247,7 @@
       "y": 2476,
       "w": 165,
       "h": 18,
-      "color": [
-        85,
-        96,
-        109
-      ],
+      "color": [85, 96, 109],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "L"
@@ -357,11 +257,7 @@
       "y": 2407,
       "w": 165,
       "h": 18,
-      "color": [
-        86,
-        97,
-        110
-      ],
+      "color": [86, 97, 110],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "C"
@@ -371,11 +267,7 @@
       "y": 2337,
       "w": 158,
       "h": 18,
-      "color": [
-        86,
-        97,
-        110
-      ],
+      "color": [86, 97, 110],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "L"
@@ -385,11 +277,7 @@
       "y": 2267,
       "w": 160,
       "h": 18,
-      "color": [
-        87,
-        98,
-        111
-      ],
+      "color": [87, 98, 111],
       "zone": "L-C Zigzag",
       "section": "L-C Zigzag",
       "laneKey": "C"
@@ -399,11 +287,7 @@
       "y": 2196,
       "w": 170,
       "h": 18,
-      "color": [
-        94,
-        105,
-        117
-      ],
+      "color": [94, 105, 117],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "R"
@@ -413,11 +297,7 @@
       "y": 2125,
       "w": 162,
       "h": 18,
-      "color": [
-        95,
-        105,
-        118
-      ],
+      "color": [95, 105, 118],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "C"
@@ -427,11 +307,7 @@
       "y": 2054,
       "w": 160,
       "h": 18,
-      "color": [
-        96,
-        106,
-        118
-      ],
+      "color": [96, 106, 118],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "R"
@@ -441,11 +317,7 @@
       "y": 1982,
       "w": 158,
       "h": 18,
-      "color": [
-        96,
-        107,
-        119
-      ],
+      "color": [96, 107, 119],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "C"
@@ -455,11 +327,7 @@
       "y": 1910,
       "w": 155,
       "h": 18,
-      "color": [
-        97,
-        108,
-        120
-      ],
+      "color": [97, 108, 120],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "R"
@@ -469,11 +337,7 @@
       "y": 1836,
       "w": 155,
       "h": 18,
-      "color": [
-        98,
-        108,
-        120
-      ],
+      "color": [98, 108, 120],
       "zone": "R-C Zigzag",
       "section": "R-C Zigzag",
       "laneKey": "C"
@@ -483,11 +347,7 @@
       "y": 1763,
       "w": 165,
       "h": 18,
-      "color": [
-        105,
-        115,
-        127
-      ],
+      "color": [105, 115, 127],
       "zone": "Left Ledge",
       "section": "Left Ledge",
       "laneKey": "LL"
@@ -497,11 +357,7 @@
       "y": 1692,
       "w": 160,
       "h": 18,
-      "color": [
-        106,
-        116,
-        127
-      ],
+      "color": [106, 116, 127],
       "zone": "Left Ledge",
       "section": "Left Ledge",
       "laneKey": "LL"
@@ -511,11 +367,7 @@
       "y": 1620,
       "w": 155,
       "h": 18,
-      "color": [
-        107,
-        117,
-        128
-      ],
+      "color": [107, 117, 128],
       "zone": "Left Ledge",
       "section": "Left Ledge",
       "laneKey": "LL"
@@ -525,11 +377,7 @@
       "y": 1546,
       "w": 150,
       "h": 18,
-      "color": [
-        107,
-        118,
-        128
-      ],
+      "color": [107, 118, 128],
       "zone": "Left Ledge",
       "section": "Left Ledge",
       "laneKey": "LL"
@@ -539,11 +387,7 @@
       "y": 1470,
       "w": 165,
       "h": 18,
-      "color": [
-        114,
-        124,
-        134
-      ],
+      "color": [114, 124, 134],
       "zone": "Mid Bridge",
       "section": "Mid Bridge",
       "laneKey": "L"
@@ -553,11 +397,7 @@
       "y": 1399,
       "w": 175,
       "h": 18,
-      "color": [
-        115,
-        125,
-        134
-      ],
+      "color": [115, 125, 134],
       "zone": "Mid Bridge",
       "section": "Mid Bridge",
       "laneKey": "C"
@@ -567,11 +407,7 @@
       "y": 1330,
       "w": 165,
       "h": 18,
-      "color": [
-        116,
-        126,
-        135
-      ],
+      "color": [116, 126, 135],
       "zone": "Mid Bridge",
       "section": "Mid Bridge",
       "laneKey": "R"
@@ -581,11 +417,7 @@
       "y": 1262,
       "w": 160,
       "h": 18,
-      "color": [
-        123,
-        133,
-        140
-      ],
+      "color": [123, 133, 140],
       "zone": "Right Ledge",
       "section": "Right Ledge",
       "laneKey": "RR"
@@ -595,11 +427,7 @@
       "y": 1191,
       "w": 155,
       "h": 18,
-      "color": [
-        123,
-        133,
-        141
-      ],
+      "color": [123, 133, 141],
       "zone": "Right Ledge",
       "section": "Right Ledge",
       "laneKey": "RR"
@@ -609,11 +437,7 @@
       "y": 1119,
       "w": 150,
       "h": 18,
-      "color": [
-        124,
-        134,
-        141
-      ],
+      "color": [124, 134, 141],
       "zone": "Right Ledge",
       "section": "Right Ledge",
       "laneKey": "RR"
@@ -623,11 +447,7 @@
       "y": 1044,
       "w": 145,
       "h": 18,
-      "color": [
-        125,
-        135,
-        142
-      ],
+      "color": [125, 135, 142],
       "zone": "Right Ledge",
       "section": "Right Ledge",
       "laneKey": "RR"
@@ -637,11 +457,7 @@
       "y": 969,
       "w": 165,
       "h": 18,
-      "color": [
-        132,
-        142,
-        149
-      ],
+      "color": [132, 142, 149],
       "zone": "Mid Bridge2",
       "section": "Mid Bridge2",
       "laneKey": "R"
@@ -651,11 +467,7 @@
       "y": 898,
       "w": 178,
       "h": 18,
-      "color": [
-        133,
-        142,
-        149
-      ],
+      "color": [133, 142, 149],
       "zone": "Mid Bridge2",
       "section": "Mid Bridge2",
       "laneKey": "C"
@@ -665,11 +477,7 @@
       "y": 829,
       "w": 165,
       "h": 18,
-      "color": [
-        133,
-        143,
-        150
-      ],
+      "color": [133, 143, 150],
       "zone": "Mid Bridge2",
       "section": "Mid Bridge2",
       "laneKey": "L"
@@ -679,11 +487,7 @@
       "y": 760,
       "w": 145,
       "h": 18,
-      "color": [
-        144,
-        152,
-        158
-      ],
+      "color": [144, 152, 158],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "L"
@@ -693,11 +497,7 @@
       "y": 685,
       "w": 138,
       "h": 18,
-      "color": [
-        145,
-        153,
-        159
-      ],
+      "color": [145, 153, 159],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "C"
@@ -707,11 +507,7 @@
       "y": 609,
       "w": 140,
       "h": 18,
-      "color": [
-        146,
-        153,
-        159
-      ],
+      "color": [146, 153, 159],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "R"
@@ -721,11 +517,7 @@
       "y": 532,
       "w": 135,
       "h": 18,
-      "color": [
-        147,
-        154,
-        160
-      ],
+      "color": [147, 154, 160],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "C"
@@ -735,11 +527,7 @@
       "y": 456,
       "w": 135,
       "h": 18,
-      "color": [
-        148,
-        155,
-        160
-      ],
+      "color": [148, 155, 160],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "L"
@@ -749,11 +537,7 @@
       "y": 377,
       "w": 130,
       "h": 18,
-      "color": [
-        148,
-        156,
-        161
-      ],
+      "color": [148, 156, 161],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "C"
@@ -763,11 +547,7 @@
       "y": 298,
       "w": 130,
       "h": 18,
-      "color": [
-        149,
-        157,
-        162
-      ],
+      "color": [149, 157, 162],
       "zone": "Peak",
       "section": "Peak",
       "laneKey": "R"
@@ -777,11 +557,7 @@
       "y": 218,
       "w": 185,
       "h": 18,
-      "color": [
-        170,
-        177,
-        180
-      ],
+      "color": [170, 177, 180],
       "zone": "Summit",
       "section": "Summit",
       "laneKey": "C"
@@ -791,11 +567,7 @@
       "y": 147,
       "w": 195,
       "h": 18,
-      "color": [
-        171,
-        178,
-        181
-      ],
+      "color": [171, 178, 181],
       "zone": "Summit",
       "section": "Summit",
       "laneKey": "C"
@@ -805,11 +577,7 @@
       "y": 80,
       "w": 300,
       "h": 18,
-      "color": [
-        160,
-        220,
-        150
-      ],
+      "color": [160, 220, 150],
       "zone": "finish",
       "section": "finish",
       "isFinish": true
