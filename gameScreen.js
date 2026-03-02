@@ -27,17 +27,17 @@ function initGame() {
 
   for (let p of levelData.platforms) {
     const plat = {
-      x:       p.x,
-      y:       p.y,
-      w:       p.w,
-      h:       p.h,
-      color:   p.color   || [80, 80, 90],
-      zone:    p.zone    || 'normal',
-      section: p.section || 'normal',
-      laneKey: p.laneKey || 'C',
-      isFinish: !!p.isFinish,
-      // ── Platform wobble (Layer 3) ────────────────────────
-      // baseX is the authoritative JSON x; p.x is mutated each frame.
+      x:           p.x,
+      y:           p.y,
+      w:           p.w,
+      h:           p.h,
+      color:       p.color    || [80, 80, 90],
+      zone:        p.zone     || 'normal',
+      section:     p.section  || 'normal',
+      laneKey:     p.laneKey  || 'C',
+      isFinish:    !!p.isFinish,
+      // ── Platform wobble state ─────────────────────────────
+      // baseX is the authoritative JSON x. p.x is mutated each frame.
       // wobblePhase is randomised so platforms don't swing in unison.
       baseX:       p.x,
       wobblePhase: random(TWO_PI),
@@ -63,9 +63,10 @@ function drawGame() {
   background(18, 20, 30);
 
   if (!winTriggered) {
-    // Layer 3: advance platform wobble BEFORE player.update() so
-    // AABB collision sees the correct updated p.x this frame.
+    // Layer 3: update platform wobble BEFORE player.update() so AABB
+    // collision sees the correct p.x for this frame.
     updatePlatformWobble();
+
     player.inputLeft  = _keys.left;
     player.inputRight = _keys.right;
     player.inputDown  = _keys.down;
@@ -115,22 +116,18 @@ function checkExhaustion() {
 
 // ── Layer 3: Platform wobble ──────────────────────────────────
 // Called once per frame before player.update().
-// Mutates p.x to its current oscillated position.
-// Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t²
-//   altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)  [0 at ground, 1 at top]
-// Square exponent: nearly zero in the lower half, significant near the summit.
-// Ground slab and finish platform are always exempt from wobble.
+// Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t ^ PLAT_WOBBLE_CURVE
+// altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)  [0 at ground, 1 at top]
+//
+// PLAT_WOBBLE_CURVE controls onset shape (see constants.js).
+// Ground slab and finish platform are always exempt.
 function updatePlatformWobble() {
   for (let p of platforms) {
     if (p.isFinish || p.zone === 'ground') continue;
 
-    // altitude_t: 0 at bottom of level, 1 at top.
     let altitude_t = constrain(1 - (p.y / LEVEL_HEIGHT), 0, 1);
+    let amp = PLAT_WOBBLE_AMP_MAX * pow(altitude_t, PLAT_WOBBLE_CURVE);
 
-    // Square curve keeps lower platforms stable.
-    let amp = PLAT_WOBBLE_AMP_MAX * altitude_t * altitude_t;
-
-    // Skip negligible amplitudes (saves sin() on low platforms).
     if (amp < 0.1) continue;
 
     p.wobblePhase += PLAT_WOBBLE_FREQ;

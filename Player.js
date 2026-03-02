@@ -2,21 +2,21 @@
 // Player.js
 // Handles movement, physics, jump, AABB collision with platforms.
 //
-// Imbalance system (three layers, all fatigue-scaled):
+// Balance / imbalance system — three layers, ALL active from frame one:
 //
 //  Layer 1 — Delayed stabilization
-//    Ground friction when releasing input varies with energy level.
-//    High energy → crisp stop. Low energy → sluggish coast with a
-//    tiny spring-overshoot as the body "re-finds" its centre.
+//    When no horizontal input is held on the ground, vx decays using
+//    BALANCE_FRICTION_BASE (slower than GROUND_FRICTION) so the player
+//    always coasts before stopping. Fatigue reduces friction further.
+//    A micro-lurch fires on the exact frame input is released.
 //
-//  Layer 2 — Idle / movement sway
-//    A sinusoidal offset added to vx each frame, scaled by BOTH
-//    current speed and fatigue. Zero effect when standing still at
-//    full energy. Strongest when running with low energy.
+//  Layer 2 — Active grounded sway
+//    A sine wave is added to vx every grounded frame using a fixed
+//    baseline amplitude, so the player wobbles even when standing still
+//    at full energy. Fatigue increases the amplitude additively.
 //
 //  Layer 3 — Platform wobble (handled in gameScreen.js)
-//    Upper platforms oscillate horizontally; collision uses updated
-//    p.x directly so no changes here are needed for that layer.
+//    Upper platforms oscillate; collision reads updated p.x directly.
 // ============================================================
 
 class Player {
@@ -43,54 +43,45 @@ class Player {
     this.isExhausted = false;
 
     // ── Balance state ────────────────────────────────────────
-    // onCheckpoint: set by gameScreen.js — suppresses sway while resting.
-    // _wobblePhase: continuous accumulator so the cycle never resets.
-    // _prevHasInput: tracks whether input was held last frame, used to
-    //   detect the exact frame the player releases a key (overshoot trigger).
-    this.onCheckpoint  = false;
-    this._wobblePhase  = 0;
-    this._prevHasHorizInput = false;
+    // onCheckpoint   : set externally — partially suppresses sway at rest
+    // _wobblePhase   : continuous so the sway cycle never resets on landing
+    // _prevHorizInput: remembers last frame's input state to detect release
+    this.onCheckpoint      = false;
+    this._wobblePhase      = 0;
+    this._prevHorizInput   = false;
   }
 
   // ── Energy helpers ──────────────────────────────────────────
 
-  // 0..1 speed multiplier based on energy.
-  // sqrt curve: penalty is gradual, not a sudden cliff.
+  // 0→1 speed multiplier. sqrt curve: penalty is gradual, not a cliff.
   energySpeedMultiplier() {
     let t = constrain(this.energy / ENERGY_MAX, 0, 1);
     return ENERGY_SPEED_MIN + (1 - ENERGY_SPEED_MIN) * sqrt(t);
   }
 
-  // Returns the ground-friction value to use when NO input is held
-  // and the player is on the ground (delayed stabilization, Layer 1).
-  // Interpolates across three energy bands:
-  //   > FATIGUE_HIGH  → FRICTION_HIGH  (crisp)
-  //   FATIGUE_MID..HIGH → lerp HIGH→MID  (mild drift)
-  //   < FATIGUE_MID   → lerp MID→LOW   (sluggish coast)
-  _balanceFriction() {
+  // ── Layer 1 helpers ─────────────────────────────────────────
+
+  // Ground-release friction: ALWAYS uses balance friction (not GROUND_FRICTION).
+  // Linearly reduces from BALANCE_FRICTION_BASE toward BALANCE_FRICTION_TIRED
+  // as energy falls to BALANCE_FATIGUE_TIRED.
+  _releaseFriction() {
     let t = constrain(this.energy / ENERGY_MAX, 0, 1);
-    if (t >= BALANCE_FATIGUE_HIGH) {
-      return BALANCE_FRICTION_HIGH;
-    } else if (t >= BALANCE_FATIGUE_MID) {
-      // Normalise t within the MID→HIGH band
-      let band = (t - BALANCE_FATIGUE_MID) / (BALANCE_FATIGUE_HIGH - BALANCE_FATIGUE_MID);
-      return lerp(BALANCE_FRICTION_MID, BALANCE_FRICTION_HIGH, band);
-    } else {
-      // Normalise t within the 0→MID band
-      let band = t / BALANCE_FATIGUE_MID;
-      return lerp(BALANCE_FRICTION_LOW, BALANCE_FRICTION_MID, band);
+    if (t >= BALANCE_FATIGUE_TIRED) {
+      // Map t from [TIRED_THRESHOLD..1.0] → [BASE..BASE] then toward TIRED
+      // Actually a simple lerp: at t=1.0 → BASE, at t=TIRED → TIRED
+      let band = (t - BALANCE_FATIGUE_TIRED) / (1.0 - BALANCE_FATIGUE_TIRED);
+      return lerp(BALANCE_FRICTION_TIRED, BALANCE_FRICTION_BASE, band);
     }
+    // Below the fatigue threshold — full tired friction
+    return BALANCE_FRICTION_TIRED;
   }
 
-  // Returns how much of the spring-overshoot correction to apply.
-  // 0 above FATIGUE_HIGH (no overshoot when fresh).
-  // Scales linearly to 1 at FATIGUE_MID, stays at 1 below it.
-  _overshootStrength() {
+  // Overshoot nudge strength for the micro-lurch on key release.
+  // Linearly interpolates BASE→TIRED as energy drops.
+  _overshootK() {
     let t = constrain(this.energy / ENERGY_MAX, 0, 1);
-    if (t >= BALANCE_FATIGUE_HIGH) return 0;
-    let band = 1 - (t - BALANCE_FATIGUE_MID) /
-                     (BALANCE_FATIGUE_HIGH - BALANCE_FATIGUE_MID);
-    return constrain(band, 0, 1);
+    // t=1 (full energy) → BASE; t=0 (exhausted) → TIRED
+    return lerp(BALANCE_OVERSHOOT_TIRED, BALANCE_OVERSHOOT_BASE, t);
   }
 
   refillAtCheckpoint() {
@@ -129,34 +120,27 @@ class Player {
     if (this.inputRight) this.facingRight = true;
     if (this.inputLeft)  this.facingRight = false;
 
-    // ── Layer 1: Friction selection ──────────────────────────
-    // When active input is held OR we are in the air, use the snappy
-    // GROUND_FRICTION (0.25) so jump arcs are predictable.
-    // When input is released on the ground, use the fatigue-scaled
-    // balance friction for the delayed-stabilization feel.
+    // ── Layer 1a: Friction ───────────────────────────────────
+    // Active input or airborne → snappy GROUND_FRICTION so jump arcs
+    // stay predictable and acceleration feels responsive.
+    // Released on ground → always-on balance friction (slower stop).
     let friction;
     if (hasHorizInput || !this.onGround) {
       friction = GROUND_FRICTION;
     } else {
-      friction = this._balanceFriction();
+      friction = this._releaseFriction();
     }
     this.vx = lerp(this.vx, targetVx, friction);
 
-    // ── Layer 1: Overshoot spring-damper ─────────────────────
-    // Fires on the first frame after input is released, on the ground,
-    // and only when there is meaningful fatigue (overshootStrength > 0).
-    // The spring gently pulls vx back toward 0 once it overshoots,
-    // creating the "body catching itself" micro-lurch.
-    let justReleasedInput = this._prevHasHorizInput && !hasHorizInput;
-    if (justReleasedInput && this.onGround) {
-      let os = this._overshootStrength();
-      if (os > 0 && abs(this.vx) > 0.05) {
-        // Add a small counter-nudge: damped spring toward zero.
-        // BALANCE_OVERSHOOT_K * os pulls opposite to current motion.
-        this.vx -= this.vx * BALANCE_OVERSHOOT_K * os;
-      }
+    // ── Layer 1b: Micro-lurch on key release ─────────────────
+    // Fires exactly once on the first grounded frame after releasing input.
+    // Applies a small counter-nudge to vx — the "body catching itself" feel.
+    // Always active; overshoot grows mildly with fatigue.
+    let justReleased = this._prevHorizInput && !hasHorizInput;
+    if (justReleased && this.onGround && abs(this.vx) > 0.05) {
+      this.vx -= this.vx * this._overshootK();
     }
-    this._prevHasHorizInput = hasHorizInput;
+    this._prevHorizInput = hasHorizInput;
 
     // ── Jump ────────────────────────────────────────────────
     if (this.inputJump && this.onGround && !this.isExhausted) {
@@ -165,7 +149,7 @@ class Player {
       this.energy   = max(0, this.energy - ENERGY_DRAIN_JUMP);
       if (this.energy === 0) this.isExhausted = true;
     }
-    this.inputJump = false; // consume every frame
+    this.inputJump = false;
 
     // ── Gravity ─────────────────────────────────────────────
     let gravThisFrame = GRAVITY;
@@ -174,8 +158,12 @@ class Player {
     this.vy += gravThisFrame;
     this.vy  = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
-    // ── Layer 2: Idle / movement sway ────────────────────────
-    this._applyBalanceSway();
+    // ── Layer 2: Grounded sway ───────────────────────────────
+    // Applied before position integration. Only fires when grounded
+    // so the sway does not affect jump arcs or air control.
+    if (this.onGround) {
+      this._applyGroundedSway();
+    }
 
     // ── Integrate position ───────────────────────────────────
     this.x += this.vx;
@@ -196,38 +184,30 @@ class Player {
     this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
   }
 
-  // ── Layer 2: Sway implementation ─────────────────────────────
-  // Sine wave added to vx, modulated by two independent scalars:
+  // ── Layer 2: Grounded sway implementation ────────────────────
+  // Adds a sinusoidal offset to vx. Two additive components:
   //
-  //   speedScale   = |vx| / MOVE_SPEED   — zero sway when stationary
-  //   fatigueScale = 1 − energyFraction  — zero sway at full energy
+  //   baseline  = PLAYER_SWAY_AMP_BASE                  (always on)
+  //   fatigued  = PLAYER_SWAY_AMP_FATIGUE × fatigueT    (grows with tiredness)
+  //   totalAmp  = baseline + fatigued
   //
-  // The product means a fresh, stationary player has virtually no sway.
-  // A tired, running player has the most. The maximum possible addition
-  // per frame is PLAYER_SWAY_AMP (≈ 0.30 px) — never enough to push an
-  // idle player off a narrow edge.
-  _applyBalanceSway() {
+  // fatigueT = 1 − energyFraction. At full energy: totalAmp = BASE.
+  // At zero energy: totalAmp = BASE + FATIGUE.
+  //
+  // Checkpoint platforms partially suppress both components — but not
+  // to zero, so the symptom is never fully absent.
+  _applyGroundedSway() {
     this._wobblePhase += PLAYER_SWAY_FREQ;
 
     let checkpointMul = this.onCheckpoint ? PLAYER_SWAY_CHECKPOINT_DAMPEN : 1.0;
 
-    // How fast is the player moving right now? (0 = idle, 1 = full speed)
-    let speedScale = min(abs(this.vx) / MOVE_SPEED, 1.0);
+    let fatigueT = 1.0 - constrain(this.energy / ENERGY_MAX, 0, 1);
+    let totalAmp = PLAYER_SWAY_AMP_BASE + PLAYER_SWAY_AMP_FATIGUE * fatigueT;
 
-    // How fatigued is the player? (0 = fresh, 1 = exhausted)
-    let energyFrac   = constrain(this.energy / ENERGY_MAX, 0, 1);
-    let fatigueScale = 1 - energyFrac; // 0 at full energy, 1 at zero energy
-
-    this.vx +=
-      PLAYER_SWAY_AMP *
-      speedScale *
-      fatigueScale *
-      checkpointMul *
-      sin(this._wobblePhase);
+    this.vx += totalAmp * checkpointMul * sin(this._wobblePhase);
   }
 
   // ── AABB resolution ──────────────────────────────────────────
-  // Stand on top, block sides, block ceiling.
   _resolveAABB(p) {
     if (
       this.x + this.w <= p.x ||
@@ -241,8 +221,8 @@ class Player {
     let overlapTop   = this.y + this.h - p.y;
     let overlapBot   = p.y + p.h - this.y;
 
-    let minX = min(overlapLeft,  overlapRight);
-    let minY = min(overlapTop,   overlapBot);
+    let minX = min(overlapLeft, overlapRight);
+    let minY = min(overlapTop,  overlapBot);
 
     if (minY < minX) {
       if (overlapTop < overlapBot) {
@@ -267,10 +247,6 @@ class Player {
     let cx = this.x + this.w / 2;
     let cy = this.y + this.h / 2;
 
-    // Body colour shifts with energy:
-    //   > LOW_THRESHOLD : warm skin tone
-    //   → LOW_THRESHOLD : lerp toward yellow-grey
-    //   isExhausted     : dull red-grey
     let bodyR, bodyG, bodyB;
     if (this.isExhausted) {
       bodyR = 190; bodyG = 90;  bodyB = 80;
@@ -286,12 +262,10 @@ class Player {
     noStroke();
     rect(this.x, this.y, this.w, this.h, 4);
 
-    // Eyes
     let eyeOffsetX = this.facingRight ? this.w * 0.25 : -this.w * 0.25;
     fill(50);
     ellipse(cx + eyeOffsetX, cy - this.h * 0.15, 5, 5);
 
-    // Legs
     stroke(180, 160, 120);
     strokeWeight(2);
     if (this.onGround) {
