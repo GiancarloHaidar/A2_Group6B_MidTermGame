@@ -29,13 +29,13 @@ class Player {
     this.energy      = ENERGY_MAX;
     this.isExhausted = false;
 
-    // ── Stumble / Balance ─────────────────────────────────────
-    // onCheckpoint is set by gameScreen.js (same pattern as onGround).
-    // _stumbleTimer counts down each frame; fires a nudge at zero.
-    // _stumbleInterval is re-randomised after each stumble fires.
-    this.onCheckpoint    = false;
-    this._stumbleTimer   = floor(random(STUMBLE_INTERVAL_MIN, STUMBLE_INTERVAL_MAX));
-    this._stumbleInterval = this._stumbleTimer; // store for reference
+    // ── Balance instability ──────────────────────────────────
+    // onCheckpoint is set by gameScreen.js when the player stands on
+    // a checkpoint platform — suppresses sway while resting.
+    // _wobblePhase is a continuous phase accumulator (radians) so the
+    // wobble cycle doesn't reset when the player lands or jumps.
+    this.onCheckpoint  = false;
+    this._wobblePhase  = 0;   // radians, advances WOBBLE_FREQ each frame
   }
 
   // ── Energy helpers ───────────────────────────────────────────
@@ -94,10 +94,19 @@ class Player {
       ? 0
       : MOVE_SPEED * this.energySpeedMultiplier();
 
+    let hasHorizInput = this.inputLeft || this.inputRight;
     let targetVx = 0;
     if (this.inputLeft)  targetVx -= effectiveSpeed;
     if (this.inputRight) targetVx += effectiveSpeed;
-    this.vx = lerp(this.vx, targetVx, GROUND_FRICTION);
+
+    // Drift friction: when no key is held AND on the ground, use the
+    // slower BALANCE_DRIFT_FRICTION so the player coasts to a stop over
+    // ~20 frames instead of ~6 — the "balance takes time to stabilise" feel.
+    // In the air, always use normal friction so jump arcs stay predictable.
+    let friction = (hasHorizInput || !this.onGround)
+      ? GROUND_FRICTION
+      : BALANCE_DRIFT_FRICTION;
+    this.vx = lerp(this.vx, targetVx, friction);
 
     if (this.inputRight) this.facingRight = true;
     if (this.inputLeft)  this.facingRight = false;
@@ -121,8 +130,8 @@ class Player {
     this.vy += gravThisFrame;
     this.vy = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
-    // ── Stumble nudge ────────────────────────────────────────
-    this._updateStumble();
+    // ── Balance sway ─────────────────────────────────────────
+    this._applyBalanceSway();
 
     // ── Integrate position ───────────────────────────────────
     this.x += this.vx;
@@ -145,37 +154,45 @@ class Player {
     this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
   }
 
-  // ── Stumble / Balance instability ───────────────────────────
+  // ── Balance sway ─────────────────────────────────────────────
   // Called once per frame from update(), just before position integration.
-  // Decrements a countdown timer; when it hits zero a signed vx nudge fires
-  // (if the player is moving and not on a checkpoint), then the timer is
-  // re-randomised for the next stumble.
   //
-  // The nudge lives in vx, so GROUND_FRICTION naturally decays it over
-  // ~4–5 frames — it feels like a brief stumble and a recovery, not a shove.
-  _updateStumble() {
-    this._stumbleTimer--;
+  // Two independent mechanisms:
+  //
+  // 1. DRIFT (lazy deceleration) — handled above in the movement block by
+  //    switching to BALANCE_DRIFT_FRICTION when no key is held on the ground.
+  //    This method handles only the sine-wave sway component.
+  //
+  // 2. SWAY — a continuous sine wave added directly to vx. Amplitude scales
+  //    with altitude so low platforms feel stable and high ones feel precarious.
+  //    The wave runs even when the player is standing still, simulating
+  //    persistent postural sway rather than movement-triggered stumbles.
+  _applyBalanceSway() {
+    // Advance the phase accumulator — independent of frameCount so it
+    // survives restarts, pauses, and future variable frame rates cleanly.
+    this._wobblePhase += WOBBLE_FREQ;
 
-    if (this._stumbleTimer > 0) return; // nothing to do yet
+    // altitude_t: 0 at the ground, 1 at the summit of LEVEL_HEIGHT.
+    // player.y decreases as they climb, so invert and normalise.
+    let altitude_t = constrain(1 - (this.y / LEVEL_HEIGHT), 0, 1);
 
-    // Timer expired — schedule the next stumble first so suppression
-    // (idle / checkpoint) just skips this one without disrupting the rhythm.
-    this._stumbleInterval = floor(random(STUMBLE_INTERVAL_MIN, STUMBLE_INTERVAL_MAX));
-    this._stumbleTimer    = this._stumbleInterval;
+    // Level scaling: levelNumber is 1-based; declared in sketch.js or gameScreen.js.
+    // Falls back to 1 gracefully if the variable doesn't exist yet.
+    let levelNum = (typeof levelNumber !== 'undefined') ? levelNumber : 1;
+    let levelMul = 1 + (levelNum - 1) * WOBBLE_LEVEL_SCALE;
 
-    // Suppression: skip the nudge when the player is nearly idle or safe.
-    let idle       = abs(this.vx) < STUMBLE_IDLE_DEADZONE;
-    let safe       = this.onCheckpoint;
-    let exhausted  = this.isExhausted;
-    if (idle || safe || exhausted) return;
+    // Checkpoint damping: multiplier goes to WOBBLE_CHECKPOINT_DAMPEN (default 0)
+    // while the player is resting on a safe platform.
+    let checkpointMul = this.onCheckpoint ? WOBBLE_CHECKPOINT_DAMPEN : 1.0;
 
-    // Apply a random signed vx nudge in the range [MIN, MAX].
-    // Direction is random (±), independent of current facing.
-    let strength = random(STUMBLE_STRENGTH_MIN, STUMBLE_STRENGTH_MAX);
-    let sign     = random() < 0.5 ? 1 : -1;
-    this.vx     += sign * strength;
-    // Note: vx is NOT clamped here — the existing GROUND_FRICTION lerp
-    // naturally brings it back toward targetVx within a few frames.
+    // Final sway contribution to vx this frame.
+    let sway = WOBBLE_AMP * altitude_t * levelMul * checkpointMul
+               * sin(this._wobblePhase);
+
+    this.vx += sway;
+    // vx is not clamped here; the lerp in the movement block will absorb
+    // the sway contribution over subsequent frames, which is exactly the
+    // overcorrection / delayed stabilisation behaviour we want.
   }
 
   // AABB: stand on top, block sides, block ceiling
