@@ -12,12 +12,8 @@ let winTriggered   = false;
 let winAnimTimer   = 0;
 
 // ── Altitude mapping ─────────────────────────────────────────
-// Computed once in initGame() from levelData geometry.
-// _groundY  : world Y of the ground platform top surface (= 0 km)
-// _climbPx  : pixel distance from ground to finish platform top (= 100 km)
-// altKm = clamp(((_groundY - playerFeetY) / _climbPx) * 100, 0, 100)
 let _groundY  = 0;
-let _climbPx  = 1; // safe default avoids divide-by-zero before initGame runs
+let _climbPx  = 1;
 
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
@@ -31,16 +27,18 @@ function initGame() {
 
   for (let p of levelData.platforms) {
     const plat = {
-      x: p.x, y: p.y, w: p.w, h: p.h,
-      color:    p.color    || [80, 80, 90],
-      zone:     p.zone     || 'normal',
-      section:  p.section  || 'normal',
-      laneKey:  p.laneKey  || 'C',
+      x:       p.x,
+      y:       p.y,
+      w:       p.w,
+      h:       p.h,
+      color:   p.color   || [80, 80, 90],
+      zone:    p.zone    || 'normal',
+      section: p.section || 'normal',
+      laneKey: p.laneKey || 'C',
       isFinish: !!p.isFinish,
-      // ── Platform wobble ──────────────────────────────────
-      // baseX is the original, authoritative position from the JSON.
-      // p.x is mutated each frame to the current oscillated position.
-      // wobblePhase starts at a random offset so platforms don't sway in unison.
+      // ── Platform wobble (Layer 3) ────────────────────────
+      // baseX is the authoritative JSON x; p.x is mutated each frame.
+      // wobblePhase is randomised so platforms don't swing in unison.
       baseX:       p.x,
       wobblePhase: random(TWO_PI),
     };
@@ -54,31 +52,26 @@ function initGame() {
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
   cam.y = constrain(cam.y, 0, max(0, LEVEL_HEIGHT - height));
 
-  // ── Altitude mapping setup ────────────────────────────────
-  // Ground Y = top surface of the platform with zone "ground".
-  // Finish Y = top surface of the finish platform (player feet when standing on it).
-  // These are read live from levelData so they stay correct if the level changes.
   const groundPlat = levelData.platforms.find(p => p.zone === 'ground');
   _groundY = groundPlat ? groundPlat.y : LEVEL_HEIGHT;
   _climbPx = finishPlatform
-    ? max(1, _groundY - finishPlatform.y)   // max(1,...) guards against divide-by-zero
+    ? max(1, _groundY - finishPlatform.y)
     : LEVEL_HEIGHT;
 }
 
 function drawGame() {
   background(18, 20, 30);
 
-  // ── Update ────────────────────────────────────────────────
   if (!winTriggered) {
-    // Advance platform positions BEFORE player.update() so the AABB
-    // collision this frame sees the correct updated platform x.
+    // Layer 3: advance platform wobble BEFORE player.update() so
+    // AABB collision sees the correct updated p.x this frame.
     updatePlatformWobble();
     player.inputLeft  = _keys.left;
     player.inputRight = _keys.right;
     player.inputDown  = _keys.down;
     player.update(platforms);
     checkWin();
-    checkExhaustion(); // → "lose" screen if energy hits 0
+    checkExhaustion();
   } else {
     winAnimTimer++;
     if (winAnimTimer > 90) currentScreen = "win";
@@ -88,10 +81,8 @@ function drawGame() {
 
   let ox = getWorldOffsetX();
 
-  // ── Screen-space full background ──────────────────────────
   drawScreenBackground();
 
-  // ── World space ───────────────────────────────────────────
   push();
     translate(ox, 0);
     cam.apply();
@@ -101,7 +92,6 @@ function drawGame() {
     player.draw();
   pop();
 
-  // ── Screen-space UI (never scrolls) ───────────────────────
   drawUI();
 }
 
@@ -117,35 +107,31 @@ function checkWin() {
 }
 
 // ── Exhaustion / lose detection ───────────────────────────────
-// Called every frame after player.update(). Mirrors checkWin().
 function checkExhaustion() {
   if (player.isExhausted) {
     currentScreen = "lose";
   }
 }
 
-// ── Platform wobble ───────────────────────────────────────────
+// ── Layer 3: Platform wobble ──────────────────────────────────
 // Called once per frame before player.update().
-// Mutates p.x to the current oscillated position based on altitude.
-// The AABB collision in Player._resolveAABB() reads p.x live — no
-// collision code changes needed. The finish platform is exempt.
-//
-// Amplitude formula: PLAT_WOBBLE_AMP_MAX × altitude_t²
-//   altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)
-//   Square curve → nearly zero in the lower half, strong near summit.
+// Mutates p.x to its current oscillated position.
+// Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t²
+//   altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)  [0 at ground, 1 at top]
+// Square exponent: nearly zero in the lower half, significant near the summit.
+// Ground slab and finish platform are always exempt from wobble.
 function updatePlatformWobble() {
   for (let p of platforms) {
-    // Exempt: ground slab and finish platform never wobble.
     if (p.isFinish || p.zone === 'ground') continue;
 
-    // altitude_t: 0 at ground level, 1 at the summit.
+    // altitude_t: 0 at bottom of level, 1 at top.
     let altitude_t = constrain(1 - (p.y / LEVEL_HEIGHT), 0, 1);
 
-    // Square exponent: keeps lower platforms nearly still.
+    // Square curve keeps lower platforms stable.
     let amp = PLAT_WOBBLE_AMP_MAX * altitude_t * altitude_t;
 
-    // Skip if amplitude is negligible — saves sin() calls on low platforms.
-    if (amp < 0.05) continue;
+    // Skip negligible amplitudes (saves sin() on low platforms).
+    if (amp < 0.1) continue;
 
     p.wobblePhase += PLAT_WOBBLE_FREQ;
     p.x = p.baseX + sin(p.wobblePhase) * amp;
@@ -153,14 +139,11 @@ function updatePlatformWobble() {
 }
 
 // ── Checkpoint refill ─────────────────────────────────────────
-// Call this from wherever you detect the player landing on a
-// checkpoint platform, e.g.:
-//   if (playerIsOnCheckpoint) refillCheckpoint();
 function refillCheckpoint() {
   player.refillAtCheckpoint();
 }
 
-// ── Finish marker (world space) ───────────────────────────────
+// ── Finish marker ─────────────────────────────────────────────
 function drawFinishMarker(fp) {
   const cx   = fp.x + fp.w / 2;
   const topY = fp.y;
@@ -193,9 +176,9 @@ function drawFinishMarker(fp) {
 
   for (let s = 0; s < 4; s++) {
     let angle = frameCount * 0.04 + s * (PI / 2);
-    let r  = 28 + 4 * pulse;
-    let sx = cx + cos(angle) * r;
-    let sy = topY - 40 + sin(angle) * r * 0.5;
+    let r     = 28 + 4 * pulse;
+    let sx    = cx + cos(angle) * r;
+    let sy    = topY - 40 + sin(angle) * r * 0.5;
     fill(255, 240, 100, 200);
     noStroke();
     drawStar(sx, sy, 4, 8, 5);
@@ -296,28 +279,20 @@ function drawPlatforms() {
 function drawUI() {
   let ox = getWorldOffsetX();
 
-  // ── HUD background strip ──────────────────────────────────
   fill(10, 12, 20, 230);
   noStroke();
   rect(ox, 0, PLAY_WIDTH, UI_TOP_RESERVE);
 
-  // ── Energy bar ───────────────────────────────────────────
-  // Drawn in screen space — will not scroll with the camera.
-  // Layout: [ENERGY label] [====bar====] [pct%]
-  //         all sitting inside the top UI strip.
-
   let eFrac = constrain(player.energy / ENERGY_MAX, 0, 1);
 
-  // Geometry
-  let labelW  = 54;               // width reserved for "ENERGY" text on the left
-  let pctW    = 36;               // width reserved for "100%" text on the right
-  let padX    = 12;               // inner margin from play column edges
-  let barH    = 12;               // bar height in px
-  let barTopY = 10;               // y from top of screen
+  let labelW  = 54;
+  let pctW    = 36;
+  let padX    = 12;
+  let barH    = 12;
+  let barTopY = 10;
   let trackX  = ox + padX + labelW;
   let trackW  = PLAY_WIDTH - padX * 2 - labelW - pctW;
 
-  // "ENERGY" label — left of bar
   fill(160, 170, 195, 190);
   noStroke();
   textFont("monospace");
@@ -325,16 +300,13 @@ function drawUI() {
   textAlign(LEFT, CENTER);
   text("ENERGY", ox + padX, barTopY + barH / 2);
 
-  // Track (dark background)
   fill(25, 30, 45);
   noStroke();
   rect(trackX, barTopY, trackW, barH, 4);
 
-  // Fill — green → yellow → red as energy falls
-  // Above 50%: lerp green→yellow. Below 50%: lerp yellow→red.
   let eR, eG, eB;
   if (eFrac >= 0.5) {
-    eR = round(lerp(55,  230, 1 - (eFrac - 0.5) * 2));
+    eR = round(lerp(55, 230, 1 - (eFrac - 0.5) * 2));
     eG = 215;
     eB = 55;
   } else {
@@ -343,7 +315,6 @@ function drawUI() {
     eB = 55;
   }
 
-  // Low-energy bar pulses in brightness
   let pulseAlpha = (eFrac < ENERGY_LOW_THRESHOLD / ENERGY_MAX)
     ? round(180 + 75 * sin(frameCount * 0.22))
     : 255;
@@ -355,21 +326,17 @@ function drawUI() {
     rect(trackX, barTopY, fillW, barH, 4);
   }
 
-  // Track border
   noFill();
   stroke(70, 80, 105, 200);
   strokeWeight(1);
   rect(trackX, barTopY, trackW, barH, 4);
   noStroke();
 
-  // Percentage label — right of bar
   fill(eR, eG, eB, 200);
   textAlign(LEFT, CENTER);
   textSize(10);
   text(floor(eFrac * 100) + "%", trackX + trackW + 5, barTopY + barH / 2);
 
-  // ── "LOW ENERGY" warning ──────────────────────────────────
-  // Pulses below the bar when energy < threshold and not yet exhausted.
   if (eFrac < ENERGY_LOW_THRESHOLD / ENERGY_MAX && !player.isExhausted) {
     let wa = round(120 + 110 * sin(frameCount * 0.25));
     fill(255, 75, 75, wa);
@@ -379,14 +346,10 @@ function drawUI() {
     text("! LOW ENERGY !", ox + PLAY_WIDTH / 2, barTopY + barH + 5);
   }
 
-  // ── Altitude (km) — mapped to 0–100 km (Kármán line) ───────
-  // playerFeetY = player.y + PLAYER_H (bottom edge of player sprite).
-  // altKm maps that onto [0, 100] using the ground→finish distance.
   let playerFeetY = player.y + PLAYER_H;
   let altKm       = constrain((_groundY - playerFeetY) / _climbPx * 100, 0, 100);
 
-  // ── Zone label — far right of HUD strip ──────────────────
-  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h)); // kept for getZoneLabel
+  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
   let zoneName = getZoneLabel(altitude);
   fill(140, 155, 182, 140);
   noStroke();
@@ -394,18 +357,14 @@ function drawUI() {
   textSize(9);
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
-  // ── Altitude bar (right edge of play column, below HUD) ──
-  // Fill fraction = altKm / 100, so bar reaches top exactly at the finish platform.
   let barX     = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
   let barHA    = height * 0.55;
 
-  // Track
   fill(255, 255, 255, 15);
   noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
-  // Fill — colour shifts blue→cyan→white as player approaches the Kármán line
   let altFrac = altKm / 100;
   let aR = round(lerp(80,  220, altFrac));
   let aG = round(lerp(140, 240, altFrac));
@@ -414,13 +373,11 @@ function drawUI() {
   let fillH = barHA * altFrac;
   if (fillH > 2) rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
 
-  // Kármán line marker at the very top of the track
   stroke(200, 230, 255, 80);
   strokeWeight(1);
   line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
 
-  // km readout above the bar — shows integer km, switches to "100 km" at finish
   fill(aR, aG, aB, 200);
   textAlign(RIGHT, BOTTOM);
   textSize(11);
@@ -428,7 +385,6 @@ function drawUI() {
   let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
   text(kmLabel, barX + 8, barTopYA - 2);
 
-  // ── Win flash overlay ──────────────────────────────────────
   if (winTriggered) {
     let a = map(winAnimTimer, 0, 90, 0, 200);
     fill(180, 255, 160, constrain(a, 0, 200));
@@ -442,7 +398,6 @@ function drawUI() {
     textAlign(LEFT, BASELINE);
   }
 
-  // ── Controls hint (first 5 seconds) ──────────────────────
   if (millis() < 5000 && !winTriggered) {
     let alpha = map(millis(), 3000, 5000, 200, 0);
     alpha = constrain(alpha, 0, 200);
@@ -473,7 +428,7 @@ function getZoneLabel(altitude) {
   return "SUMMIT";
 }
 
-// ── Input routing ──────────────────────────────────────────────
+// ── Input routing ─────────────────────────────────────────────
 function gameKeyPressed(kc) {
   if (kc === LEFT_ARROW  || kc === 65) _keys.left  = true;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;
