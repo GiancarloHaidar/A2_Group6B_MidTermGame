@@ -28,6 +28,14 @@ class Player {
     // movement until the level is restarted or a checkpoint refills.
     this.energy      = ENERGY_MAX;
     this.isExhausted = false;
+
+    // ── Stumble / Balance ─────────────────────────────────────
+    // onCheckpoint is set by gameScreen.js (same pattern as onGround).
+    // _stumbleTimer counts down each frame; fires a nudge at zero.
+    // _stumbleInterval is re-randomised after each stumble fires.
+    this.onCheckpoint    = false;
+    this._stumbleTimer   = floor(random(STUMBLE_INTERVAL_MIN, STUMBLE_INTERVAL_MAX));
+    this._stumbleInterval = this._stumbleTimer; // store for reference
   }
 
   // ── Energy helpers ───────────────────────────────────────────
@@ -113,6 +121,9 @@ class Player {
     this.vy += gravThisFrame;
     this.vy = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
+    // ── Stumble nudge ────────────────────────────────────────
+    this._updateStumble();
+
     // ── Integrate position ───────────────────────────────────
     this.x += this.vx;
     this.y += this.vy;
@@ -132,6 +143,39 @@ class Player {
 
     // Clamp horizontal to play column
     this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
+  }
+
+  // ── Stumble / Balance instability ───────────────────────────
+  // Called once per frame from update(), just before position integration.
+  // Decrements a countdown timer; when it hits zero a signed vx nudge fires
+  // (if the player is moving and not on a checkpoint), then the timer is
+  // re-randomised for the next stumble.
+  //
+  // The nudge lives in vx, so GROUND_FRICTION naturally decays it over
+  // ~4–5 frames — it feels like a brief stumble and a recovery, not a shove.
+  _updateStumble() {
+    this._stumbleTimer--;
+
+    if (this._stumbleTimer > 0) return; // nothing to do yet
+
+    // Timer expired — schedule the next stumble first so suppression
+    // (idle / checkpoint) just skips this one without disrupting the rhythm.
+    this._stumbleInterval = floor(random(STUMBLE_INTERVAL_MIN, STUMBLE_INTERVAL_MAX));
+    this._stumbleTimer    = this._stumbleInterval;
+
+    // Suppression: skip the nudge when the player is nearly idle or safe.
+    let idle       = abs(this.vx) < STUMBLE_IDLE_DEADZONE;
+    let safe       = this.onCheckpoint;
+    let exhausted  = this.isExhausted;
+    if (idle || safe || exhausted) return;
+
+    // Apply a random signed vx nudge in the range [MIN, MAX].
+    // Direction is random (±), independent of current facing.
+    let strength = random(STUMBLE_STRENGTH_MIN, STUMBLE_STRENGTH_MAX);
+    let sign     = random() < 0.5 ? 1 : -1;
+    this.vx     += sign * strength;
+    // Note: vx is NOT clamped here — the existing GROUND_FRICTION lerp
+    // naturally brings it back toward targetVx within a few frames.
   }
 
   // AABB: stand on top, block sides, block ceiling
