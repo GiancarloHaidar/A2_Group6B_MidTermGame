@@ -101,7 +101,7 @@ const PLAYER_SWAY_AMP_BASE = 0.05;
 // ↑ 0.25 = more obvious idle wobble from the start
 // ↓ 0.10 = very faint — still readable but barely felt
 
-const PLAYER_SWAY_AMP_FATIGUE = 0.22;
+const PLAYER_SWAY_AMP_FATIGUE = 0.09;
 // Additional amplitude added at full fatigue (fatigueT = 1).
 // totalAmp at zero energy = 0.18 + 0.22 = 0.40 px/frame.
 // ↑ 0.30 = more punishing exhausted state

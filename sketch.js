@@ -171,7 +171,7 @@ function drawWinScreen() {
   textAlign(CENTER, CENTER);
   textSize(48);
   textFont("monospace");
-  text("SUMMIT!", ox + PLAY_WIDTH / 2, height / 2 - 60 + bounce);
+  text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 60 + bounce);
 
   textSize(18);
   fill(200, 255, 180);
