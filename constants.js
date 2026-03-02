@@ -57,7 +57,7 @@ const ENERGY_CHECKPOINT_CAP = 0.7;
 // lower friction instead of GROUND_FRICTION (0.25).
 //   Normal stop: ~6 frames.   Drift stop: ~20 frames.
 // Flat across the whole level — consistent, readable.
-const BALANCE_DRIFT_FRICTION = 0.25;
+const BALANCE_DRIFT_FRICTION = 0.4;
 //   → Raise toward 0.25 to reduce drift. Lower toward 0.05 for icier feel.
 //   → Only active on the ground; air friction is unchanged.
 //
@@ -65,7 +65,7 @@ const BALANCE_DRIFT_FRICTION = 0.25;
 // A slow sine wave added to vx every frame regardless of height.
 // Flat amplitude — the player always feels slightly unsteady,
 // but it never gets worse as they climb.
-const PLAYER_SWAY_AMP = 0.22; // px/frame — max sway when at full speed
+const PLAYER_SWAY_AMP = 0.35; // px/frame — max sway when at full speed
 //   Scaled by |vx|/MOVE_SPEED so idle player has zero sway (safe on any platform).
 //   → Raise to 0.35 for a more disorienting movement feel.
 //   → Lower to 0.10 for nearly imperceptible wobble during movement.
@@ -78,7 +78,7 @@ const PLAYER_SWAY_FREQ = 0.025; // radians/frame — sway cycle speed
 // Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t²
 // where altitude_t = 1 − (platform.baseY / LEVEL_HEIGHT).
 // Square curve: nearly zero in the lower half, strong near the summit.
-const PLAT_WOBBLE_AMP_MAX = 10; // px — max side-to-side sweep at the summit
+const PLAT_WOBBLE_AMP_MAX = 15; // px — max side-to-side sweep at the summit
 //   6px = well within the safe margin on the narrowest platform (102px usable).
 //   → Raise to 10 for more challenge. Keep below 14 to stay fair.
 const PLAT_WOBBLE_FREQ = 0.02; // radians/frame — platform oscillation speed
