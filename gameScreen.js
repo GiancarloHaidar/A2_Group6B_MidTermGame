@@ -3,12 +3,11 @@
 // init, draw, and input handling for the "game" screen.
 //
 // Blur integration:
-//   drawGame() renders the entire game world into _worldBuffer
-//   (the offscreen p5.Graphics defined in sketch.js). The CSS blur
-//   filter is applied to _worldBuffer's canvas element by the blur
-//   state machine in sketch.js. The stamped buffer image is then drawn
-//   onto the main canvas at (0,0), and drawUI() draws on top of that
-//   directly — so the UI is never touched by the filter.
+//   drawGame() renders the world into _worldBuffer, then calls
+//   stampWorldBuffer() (defined in sketch.js) which sets
+//   drawingContext.filter = "blur(Npx)" on the MAIN canvas before
+//   calling image(), then resets it to "none" immediately after.
+//   UI is drawn after the reset, so it is never blurred.
 // ============================================================
 
 // ── Input state ──────────────────────────────────────────────
@@ -66,7 +65,7 @@ function initGame() {
 
 // ── Main game draw ────────────────────────────────────────────
 function drawGame() {
-  // ── Logic update (always runs on the main canvas context) ──
+  // ── Logic update ────────────────────────────────────────────
   if (!winTriggered) {
     updatePlatformWobble();
     player.inputLeft  = _keys.left;
@@ -82,20 +81,15 @@ function drawGame() {
 
   cam.update(player);
 
-  // ── World rendering → _worldBuffer (will be blurred) ───────
-  // All drawing that should be affected by the blur vision effect
-  // goes through the buffer's graphics context (g).
+  // ── World rendering → _worldBuffer ──────────────────────────
   let g  = _worldBuffer;
   let ox = getWorldOffsetX();
 
   g.clear();
-
-  // Screen-space background (fills the whole buffer including gutters)
   g.noStroke();
   g.fill(10, 11, 16);
   g.rect(0, 0, g.width, g.height);
 
-  // World-space content: column background, platforms, player
   g.push();
     g.translate(ox, 0);
     g.translate(-cam.x, -cam.y);
@@ -105,14 +99,15 @@ function drawGame() {
     _drawPlayer(g);
   g.pop();
 
-  // ── Stamp the (possibly blurred) buffer onto the main canvas ─
-  // The CSS filter on _worldBuffer.elt is set by _setWorldBlur() in
-  // sketch.js. Drawing the buffer via image() composites the blurred
-  // result onto the main canvas without affecting the main canvas itself.
+  // ── Stamp buffer onto main canvas (with blur if active) ──────
+  // stampWorldBuffer() in sketch.js sets drawingContext.filter to
+  // "blur(Npx)" on the MAIN canvas before image(), then resets to
+  // "none". This is the only approach that actually works — CSS filter
+  // on the buffer element is ignored by p5's image() call.
   clear();
-  image(_worldBuffer, 0, 0);
+  stampWorldBuffer();
 
-  // ── UI rendering → main canvas (never blurred) ──────────────
+  // ── UI → main canvas (always drawn after filter reset) ───────
   drawUI();
 }
 
@@ -152,8 +147,7 @@ function refillCheckpoint() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Private draw helpers — all accept a graphics context (g) so they
-// work correctly whether called on the main canvas or the buffer.
+// Private draw helpers — all accept a graphics context (g)
 // ══════════════════════════════════════════════════════════════
 
 function _drawFinishMarker(g, fp) {
@@ -207,9 +201,6 @@ function _drawStar(g, x, y, r1, r2, pts) {
   }
   g.endShape(CLOSE);
 }
-
-// Keep the old names as thin wrappers so sketch.js drawWinStar still works.
-function drawStar(x, y, r1, r2, pts) { _drawStar(window, x, y, r1, r2, pts); }
 
 function _drawColumnBackground(g) {
   g.noStroke();
@@ -283,23 +274,6 @@ function _drawPlatforms(g) {
 }
 
 function _drawPlayer(g) {
-  // Delegate to player.draw() but with g as the active graphics context.
-  // p5.Graphics exposes the same drawing API, so we temporarily redirect
-  // the global drawing calls by having player.draw() operate on g.
-  // The cleanest approach: call the buffer's drawingContext directly, or
-  // simply call player.draw() inside a g.push()/g.pop() block —
-  // player.draw() uses the global p5 functions which will target the
-  // currently active renderer.
-  //
-  // To make this work without refactoring Player.draw(), we use p5's
-  // push/pop on the BUFFER via the standard pattern of passing the
-  // graphics object and using its methods explicitly.
-  // Since Player.draw() uses global fill/rect/etc., we need those
-  // calls to go to the buffer. p5 routes global draw calls to whatever
-  // renderer is set as the current renderer via _renderer.
-  //
-  // The simplest safe approach: render the player at its world-space
-  // coordinates directly using g's API, mirroring Player.draw() exactly.
   let p  = player;
   let cx = p.x + p.w / 2;
   let cy = p.y + p.h / 2;
@@ -332,7 +306,7 @@ function _drawPlayer(g) {
   g.noStroke();
 }
 
-// ── UI (drawn on main canvas — never blurred) ─────────────────
+// ── UI (drawn on main canvas after filter reset — never blurred) ──
 function drawUI() {
   let ox = getWorldOffsetX();
 

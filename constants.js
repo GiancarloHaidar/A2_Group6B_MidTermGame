@@ -95,7 +95,7 @@ const BALANCE_OVERSHOOT_TIRED = 0.11;
 // across one cycle. A stationary player on a 130 px platform will
 // feel a ±2–3 px oscillation and will never be walked off the edge.
 //
-const PLAYER_SWAY_AMP_BASE = 0.18;
+const PLAYER_SWAY_AMP_BASE = 0.05;
 // Always-on sway amplitude. 0.18 px/frame peak.
 // Over a 5-second cycle this produces ±2–3 px of visible drift.
 // ↑ 0.25 = more obvious idle wobble from the start
@@ -178,12 +178,12 @@ const BLUR_FADE_OUT_FRAMES = 45;
 // ↑ 90 = very slow clearing — unsettling.
 // ↓ 15 = quick snap clear.
 
-const BLUR_INTERVAL_MIN = 300;
+const BLUR_INTERVAL_MIN = 10;
 // Minimum frames between the end of one event and the start of the next.
 // 300 ≈ 5 s. Guarantees breathing room.
 // ↓ 120 = events can follow each other very quickly (intense).
 
-const BLUR_INTERVAL_MAX = 600;
+const BLUR_INTERVAL_MAX = 20;
 // Maximum frames for the idle countdown. 600 ≈ 10 s.
 // The actual interval is a random value between MIN and MAX each time.
 // ↑ 900 = long gaps, blur feels like a rare surprise.
