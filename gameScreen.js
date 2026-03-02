@@ -1,6 +1,14 @@
 // ============================================================
 // gameScreen.js
-// init, draw, and input handling for the "game" screen
+// init, draw, and input handling for the "game" screen.
+//
+// Blur integration:
+//   drawGame() renders the entire game world into _worldBuffer
+//   (the offscreen p5.Graphics defined in sketch.js). The CSS blur
+//   filter is applied to _worldBuffer's canvas element by the blur
+//   state machine in sketch.js. The stamped buffer image is then drawn
+//   onto the main canvas at (0,0), and drawUI() draws on top of that
+//   directly — so the UI is never touched by the filter.
 // ============================================================
 
 // ── Input state ──────────────────────────────────────────────
@@ -36,9 +44,6 @@ function initGame() {
       section:     p.section  || 'normal',
       laneKey:     p.laneKey  || 'C',
       isFinish:    !!p.isFinish,
-      // ── Platform wobble state ─────────────────────────────
-      // baseX is the authoritative JSON x. p.x is mutated each frame.
-      // wobblePhase is randomised so platforms don't swing in unison.
       baseX:       p.x,
       wobblePhase: random(TWO_PI),
     };
@@ -59,14 +64,11 @@ function initGame() {
     : LEVEL_HEIGHT;
 }
 
+// ── Main game draw ────────────────────────────────────────────
 function drawGame() {
-  background(18, 20, 30);
-
+  // ── Logic update (always runs on the main canvas context) ──
   if (!winTriggered) {
-    // Layer 3: update platform wobble BEFORE player.update() so AABB
-    // collision sees the correct p.x for this frame.
     updatePlatformWobble();
-
     player.inputLeft  = _keys.left;
     player.inputRight = _keys.right;
     player.inputDown  = _keys.down;
@@ -80,19 +82,37 @@ function drawGame() {
 
   cam.update(player);
 
+  // ── World rendering → _worldBuffer (will be blurred) ───────
+  // All drawing that should be affected by the blur vision effect
+  // goes through the buffer's graphics context (g).
+  let g  = _worldBuffer;
   let ox = getWorldOffsetX();
 
-  drawScreenBackground();
+  g.clear();
 
-  push();
-    translate(ox, 0);
-    cam.apply();
-    drawColumnBackground();
-    drawPlatforms();
-    if (finishPlatform) drawFinishMarker(finishPlatform);
-    player.draw();
-  pop();
+  // Screen-space background (fills the whole buffer including gutters)
+  g.noStroke();
+  g.fill(10, 11, 16);
+  g.rect(0, 0, g.width, g.height);
 
+  // World-space content: column background, platforms, player
+  g.push();
+    g.translate(ox, 0);
+    g.translate(-cam.x, -cam.y);
+    _drawColumnBackground(g);
+    _drawPlatforms(g);
+    if (finishPlatform) _drawFinishMarker(g, finishPlatform);
+    _drawPlayer(g);
+  g.pop();
+
+  // ── Stamp the (possibly blurred) buffer onto the main canvas ─
+  // The CSS filter on _worldBuffer.elt is set by _setWorldBlur() in
+  // sketch.js. Drawing the buffer via image() composites the blurred
+  // result onto the main canvas without affecting the main canvas itself.
+  clear();
+  image(_worldBuffer, 0, 0);
+
+  // ── UI rendering → main canvas (never blurred) ──────────────
   drawUI();
 }
 
@@ -114,22 +134,13 @@ function checkExhaustion() {
   }
 }
 
-// ── Layer 3: Platform wobble ──────────────────────────────────
-// Called once per frame before player.update().
-// Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t ^ PLAT_WOBBLE_CURVE
-// altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)  [0 at ground, 1 at top]
-//
-// PLAT_WOBBLE_CURVE controls onset shape (see constants.js).
-// Ground slab and finish platform are always exempt.
+// ── Platform wobble (Layer 3) ─────────────────────────────────
 function updatePlatformWobble() {
   for (let p of platforms) {
     if (p.isFinish || p.zone === 'ground') continue;
-
     let altitude_t = constrain(1 - (p.y / LEVEL_HEIGHT), 0, 1);
     let amp = PLAT_WOBBLE_AMP_MAX * pow(altitude_t, PLAT_WOBBLE_CURVE);
-
     if (amp < 0.1) continue;
-
     p.wobblePhase += PLAT_WOBBLE_FREQ;
     p.x = p.baseX + sin(p.wobblePhase) * amp;
   }
@@ -140,91 +151,90 @@ function refillCheckpoint() {
   player.refillAtCheckpoint();
 }
 
-// ── Finish marker ─────────────────────────────────────────────
-function drawFinishMarker(fp) {
+// ══════════════════════════════════════════════════════════════
+// Private draw helpers — all accept a graphics context (g) so they
+// work correctly whether called on the main canvas or the buffer.
+// ══════════════════════════════════════════════════════════════
+
+function _drawFinishMarker(g, fp) {
   const cx   = fp.x + fp.w / 2;
   const topY = fp.y;
 
   let pulse = 0.5 + 0.5 * sin(frameCount * 0.06);
-  noStroke();
-  fill(180, 255, 160, 30 + 40 * pulse);
-  rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
+  g.noStroke();
+  g.fill(180, 255, 160, 30 + 40 * pulse);
+  g.rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
 
-  stroke(200, 200, 200);
-  strokeWeight(2);
-  line(cx, topY, cx, topY - 80);
-  noStroke();
+  g.stroke(200, 200, 200);
+  g.strokeWeight(2);
+  g.line(cx, topY, cx, topY - 80);
+  g.noStroke();
 
   let wave = sin(frameCount * 0.08) * 6;
-  fill(100, 220, 100);
-  beginShape();
-    vertex(cx,             topY - 78);
-    vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
-    vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
-    vertex(cx,             topY - 56);
-  endShape(CLOSE);
+  g.fill(100, 220, 100);
+  g.beginShape();
+    g.vertex(cx,             topY - 78);
+    g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
+    g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
+    g.vertex(cx,             topY - 56);
+  g.endShape(CLOSE);
 
-  fill(200, 255, 180, 180 + 60 * pulse);
-  noStroke();
-  textAlign(CENTER, BOTTOM);
-  textSize(13);
-  textFont("monospace");
-  text("G O A L", cx, topY - 86);
+  g.fill(200, 255, 180, 180 + 60 * pulse);
+  g.noStroke();
+  g.textAlign(CENTER, BOTTOM);
+  g.textSize(13);
+  g.textFont("monospace");
+  g.text("G O A L", cx, topY - 86);
 
   for (let s = 0; s < 4; s++) {
     let angle = frameCount * 0.04 + s * (PI / 2);
     let r     = 28 + 4 * pulse;
     let sx    = cx + cos(angle) * r;
     let sy    = topY - 40 + sin(angle) * r * 0.5;
-    fill(255, 240, 100, 200);
-    noStroke();
-    drawStar(sx, sy, 4, 8, 5);
+    g.fill(255, 240, 100, 200);
+    g.noStroke();
+    _drawStar(g, sx, sy, 4, 8, 5);
   }
-  textAlign(LEFT, BASELINE);
+  g.textAlign(LEFT, BASELINE);
 }
 
-function drawStar(x, y, r1, r2, pts) {
-  beginShape();
+function _drawStar(g, x, y, r1, r2, pts) {
+  g.beginShape();
   for (let i = 0; i < pts * 2; i++) {
     let angle = (PI / pts) * i - PI / 2;
     let r = (i % 2 === 0) ? r2 : r1;
-    vertex(x + cos(angle) * r, y + sin(angle) * r);
+    g.vertex(x + cos(angle) * r, y + sin(angle) * r);
   }
-  endShape(CLOSE);
+  g.endShape(CLOSE);
 }
 
-// ── Backgrounds ───────────────────────────────────────────────
-function drawScreenBackground() {
-  noStroke();
-  fill(10, 11, 16);
-  rect(0, 0, width, height);
-}
+// Keep the old names as thin wrappers so sketch.js drawWinStar still works.
+function drawStar(x, y, r1, r2, pts) { _drawStar(window, x, y, r1, r2, pts); }
 
-function drawColumnBackground() {
-  noStroke();
+function _drawColumnBackground(g) {
+  g.noStroke();
   let strips = 20;
   let stripH = LEVEL_HEIGHT / strips;
   for (let i = 0; i < strips; i++) {
     let t = 1 - (i / strips);
-    fill(lerp(12, 20, t), lerp(18, 36, t), lerp(35, 62, t));
-    rect(0, i * stripH, PLAY_WIDTH, stripH);
+    g.fill(lerp(12, 20, t), lerp(18, 36, t), lerp(35, 62, t));
+    g.rect(0, i * stripH, PLAY_WIDTH, stripH);
   }
-  stroke(255, 255, 255, 6);
-  strokeWeight(1);
-  for (let lx = 4; lx <= 22; lx += 9) line(lx, 0, lx, LEVEL_HEIGHT);
-  for (let rx = PLAY_WIDTH - 4; rx >= PLAY_WIDTH - 22; rx -= 9) line(rx, 0, rx, LEVEL_HEIGHT);
-  noStroke();
+  g.stroke(255, 255, 255, 6);
+  g.strokeWeight(1);
+  for (let lx = 4; lx <= 22; lx += 9) g.line(lx, 0, lx, LEVEL_HEIGHT);
+  for (let rx = PLAY_WIDTH - 4; rx >= PLAY_WIDTH - 22; rx -= 9) g.line(rx, 0, rx, LEVEL_HEIGHT);
+  g.noStroke();
   for (let i = 0; i < 50; i++) {
     let a = map(i, 0, 50, 160, 0);
-    fill(8, 10, 16, a);
-    rect(i, 0, 1, LEVEL_HEIGHT);
-    rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
+    g.fill(8, 10, 16, a);
+    g.rect(i, 0, 1, LEVEL_HEIGHT);
+    g.rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
   }
 }
 
-// ── Platforms ─────────────────────────────────────────────────
-function drawPlatforms() {
-  noStroke();
+function _drawPlatforms(g) {
+  g.noStroke();
   for (let p of platforms) {
     if (p.isFinish) continue;
 
@@ -234,45 +244,95 @@ function drawPlatforms() {
     const isZigzag = (p.section === 'Zigzag');
     const isNarrow = (p.w < 155);
 
-    fill(p.color[0], p.color[1], p.color[2]);
-    rect(p.x, p.y, p.w, p.h, 3);
+    g.fill(p.color[0], p.color[1], p.color[2]);
+    g.rect(p.x, p.y, p.w, p.h, 3);
 
     let hlAlpha = map(p.w, 130, 225, 12, 42);
-    fill(255, 255, 255, constrain(hlAlpha, 12, 42));
-    rect(p.x, p.y, p.w, 4, 3, 3, 0, 0);
+    g.fill(255, 255, 255, constrain(hlAlpha, 12, 42));
+    g.rect(p.x, p.y, p.w, 4, 3, 3, 0, 0);
 
     if (isWall) {
-      noStroke();
-      fill(255, 255, 255, 18);
-      if (lk === 'LL') rect(p.x,           p.y, 3, p.h, 3, 0, 0, 3);
-      else             rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
+      g.noStroke();
+      g.fill(255, 255, 255, 18);
+      if (lk === 'LL') g.rect(p.x,           p.y, 3, p.h, 3, 0, 0, 3);
+      else             g.rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
     }
 
     if (isPeak || (isZigzag && isNarrow)) {
-      noFill();
-      stroke(215, 145, 55, 50);
-      strokeWeight(1);
-      rect(p.x, p.y, p.w, p.h, 3);
-      noStroke();
+      g.noFill();
+      g.stroke(215, 145, 55, 50);
+      g.strokeWeight(1);
+      g.rect(p.x, p.y, p.w, p.h, 3);
+      g.noStroke();
     }
 
-    noStroke();
-    fill(0, 0, 0, 32);
-    rect(p.x + 2, p.y + p.h, p.w - 4, 5, 0, 0, 3, 3);
+    g.noStroke();
+    g.fill(0, 0, 0, 32);
+    g.rect(p.x + 2, p.y + p.h, p.w - 4, 5, 0, 0, 3, 3);
   }
 
   if (finishPlatform) {
     const fp = finishPlatform;
-    fill(fp.color[0], fp.color[1], fp.color[2]);
-    rect(fp.x, fp.y, fp.w, fp.h, 3);
-    fill(255, 255, 255, 42);
-    rect(fp.x, fp.y, fp.w, 4, 3, 3, 0, 0);
-    fill(100, 210, 100, 22);
-    rect(fp.x + 2, fp.y + fp.h, fp.w - 4, 6, 0, 0, 4, 4);
+    g.fill(fp.color[0], fp.color[1], fp.color[2]);
+    g.rect(fp.x, fp.y, fp.w, fp.h, 3);
+    g.fill(255, 255, 255, 42);
+    g.rect(fp.x, fp.y, fp.w, 4, 3, 3, 0, 0);
+    g.fill(100, 210, 100, 22);
+    g.rect(fp.x + 2, fp.y + fp.h, fp.w - 4, 6, 0, 0, 4, 4);
   }
 }
 
-// ── UI ────────────────────────────────────────────────────────
+function _drawPlayer(g) {
+  // Delegate to player.draw() but with g as the active graphics context.
+  // p5.Graphics exposes the same drawing API, so we temporarily redirect
+  // the global drawing calls by having player.draw() operate on g.
+  // The cleanest approach: call the buffer's drawingContext directly, or
+  // simply call player.draw() inside a g.push()/g.pop() block —
+  // player.draw() uses the global p5 functions which will target the
+  // currently active renderer.
+  //
+  // To make this work without refactoring Player.draw(), we use p5's
+  // push/pop on the BUFFER via the standard pattern of passing the
+  // graphics object and using its methods explicitly.
+  // Since Player.draw() uses global fill/rect/etc., we need those
+  // calls to go to the buffer. p5 routes global draw calls to whatever
+  // renderer is set as the current renderer via _renderer.
+  //
+  // The simplest safe approach: render the player at its world-space
+  // coordinates directly using g's API, mirroring Player.draw() exactly.
+  let p  = player;
+  let cx = p.x + p.w / 2;
+  let cy = p.y + p.h / 2;
+
+  let bodyR, bodyG, bodyB;
+  if (p.isExhausted) {
+    bodyR = 190; bodyG = 90;  bodyB = 80;
+  } else if (p.energy < ENERGY_LOW_THRESHOLD) {
+    let t = p.energy / ENERGY_LOW_THRESHOLD;
+    bodyR = 220;
+    bodyG = round(lerp(90,  200, t));
+    bodyB = round(lerp(80,  160, t));
+  } else {
+    bodyR = 220; bodyG = 200; bodyB = 160;
+  }
+  g.fill(bodyR, bodyG, bodyB);
+  g.noStroke();
+  g.rect(p.x, p.y, p.w, p.h, 4);
+
+  let eyeOffsetX = p.facingRight ? p.w * 0.25 : -p.w * 0.25;
+  g.fill(50);
+  g.ellipse(cx + eyeOffsetX, cy - p.h * 0.15, 5, 5);
+
+  g.stroke(180, 160, 120);
+  g.strokeWeight(2);
+  if (p.onGround) {
+    g.line(p.x + p.w * 0.3, p.y + p.h, p.x + p.w * 0.2, p.y + p.h + 8);
+    g.line(p.x + p.w * 0.7, p.y + p.h, p.x + p.w * 0.8, p.y + p.h + 8);
+  }
+  g.noStroke();
+}
+
+// ── UI (drawn on main canvas — never blurred) ─────────────────
 function drawUI() {
   let ox = getWorldOffsetX();
 

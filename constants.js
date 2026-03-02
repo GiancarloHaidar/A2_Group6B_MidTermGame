@@ -95,7 +95,7 @@ const BALANCE_OVERSHOOT_TIRED = 0.11;
 // across one cycle. A stationary player on a 130 px platform will
 // feel a ±2–3 px oscillation and will never be walked off the edge.
 //
-const PLAYER_SWAY_AMP_BASE = 0.05;
+const PLAYER_SWAY_AMP_BASE = 0.18;
 // Always-on sway amplitude. 0.18 px/frame peak.
 // Over a 5-second cycle this produces ±2–3 px of visible drift.
 // ↑ 0.25 = more obvious idle wobble from the start
@@ -143,6 +143,59 @@ const PLAT_WOBBLE_CURVE = 1.6;
 // Exponent on altitude_t. See description above.
 // ↓ 1.0 = wobble starts from the ground up
 // ↑ 2.5 = wobble concentrated near the peak
+
+// ══════════════════════════════════════════════════════════════
+// Blurry Vision — intermittent MS visual symptom
+// ══════════════════════════════════════════════════════════════
+// Blur events fire at random intervals during gameplay. Each event
+// fades in to a peak blur, holds briefly, then fades out. The UI
+// (energy bar, altitude) is never blurred — only the game world.
+//
+// Lifecycle per event:
+//   idle (countdown) → fade-in → hold → fade-out → idle (new countdown)
+//
+// All frame counts assume ~60 fps. Multiply by 1.5 for 90 fps targets.
+
+const BLUR_INTENSITY_MAX = 3.5;
+// Peak blur radius in CSS pixels at the height of an event.
+// 3–4 = subtle, readable, clearly noticeable.
+// ↑ 6   = distracting but still playable.
+// ↑ 10  = severe — not recommended for fair play.
+// ↓ 1.5 = very faint, mostly atmospheric.
+
+const BLUR_FADE_IN_FRAMES = 30;
+// Frames to ramp from 0 → INTENSITY_MAX. 30 ≈ 0.5 s.
+// ↑ 60 = very gradual onset (almost imperceptible creep).
+// ↓ 10 = sudden snap in — more jarring.
+
+const BLUR_HOLD_FRAMES = 50;
+// Frames the blur stays at peak intensity before fading. 50 ≈ 0.8 s.
+// ↑ 120 = long episode (~2 s at peak). More fatiguing.
+// ↓ 15  = a brief flash.
+
+const BLUR_FADE_OUT_FRAMES = 45;
+// Frames to ramp from INTENSITY_MAX → 0. 45 ≈ 0.75 s.
+// ↑ 90 = very slow clearing — unsettling.
+// ↓ 15 = quick snap clear.
+
+const BLUR_INTERVAL_MIN = 300;
+// Minimum frames between the end of one event and the start of the next.
+// 300 ≈ 5 s. Guarantees breathing room.
+// ↓ 120 = events can follow each other very quickly (intense).
+
+const BLUR_INTERVAL_MAX = 600;
+// Maximum frames for the idle countdown. 600 ≈ 10 s.
+// The actual interval is a random value between MIN and MAX each time.
+// ↑ 900 = long gaps, blur feels like a rare surprise.
+// ↓ 300 = same as MIN → events fire at a fixed interval (no randomness).
+
+const BLUR_ENERGY_SCALE = 0.5;
+// Extra blur multiplier driven by fatigue.
+// Final peak = INTENSITY_MAX × (1 + ENERGY_SCALE × fatigueT)
+//   where fatigueT = 1 − energyFraction  (0 = full, 1 = exhausted)
+// 0.5 = at zero energy, blur is 1.5× as strong (e.g. 3.5 → 5.25 px).
+// ↓ 0.0 = fatigue has no effect on blur intensity.
+// ↑ 1.0 = blur doubles at exhaustion. Use with a low INTENSITY_MAX.
 
 // ── UI layout ────────────────────────────────────────────────
 const UI_TOP_RESERVE = 56; // px

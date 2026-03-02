@@ -9,16 +9,133 @@ let platforms;
 let cam;
 let levelData;
 
+// ── World graphics buffer ─────────────────────────────────────
+// The game world (background, platforms, player) is drawn onto this
+// offscreen buffer instead of the main canvas. The CSS blur filter is
+// applied to the buffer's own canvas element, so the UI drawn on top
+// of the main canvas afterward is never affected.
+let _worldBuffer = null;
+
+// ── Blur state machine ────────────────────────────────────────
+// States: "idle" | "fadein" | "hold" | "fadeout"
+// _blurTimer counts down frames remaining in the current state.
+// _blurAmount is the current CSS blur radius in px (0 = clear).
+let _blurState  = "idle";
+let _blurTimer  = 0;       // frames left in current state
+let _blurAmount = 0;       // current blur radius applied to buffer (px)
+
+// Initialise the idle countdown once constants are available.
+// Called at the bottom of setup() after initGame().
+function _initBlur() {
+  _blurState  = "idle";
+  _blurTimer  = floor(random(BLUR_INTERVAL_MIN, BLUR_INTERVAL_MAX));
+  _blurAmount = 0;
+  _setWorldBlur(0);
+}
+
+// ── Blur helpers ──────────────────────────────────────────────
+
+// Apply a CSS blur filter to the buffer's underlying canvas element.
+// Passing 0 removes the filter entirely so there is no residual cost.
+function _setWorldBlur(radiusPx) {
+  if (!_worldBuffer) return;
+  let el = _worldBuffer.elt;
+  if (radiusPx <= 0.05) {
+    el.style.filter = "none";
+  } else {
+    el.style.filter = "blur(" + radiusPx.toFixed(2) + "px)";
+  }
+}
+
+// Returns the peak blur for this event, scaled by current fatigue.
+// fatigueT = 1 − energyFraction: 0 when fresh, 1 when exhausted.
+function _peakBlur() {
+  if (!player) return BLUR_INTENSITY_MAX;
+  let fatigueT = 1 - constrain(player.energy / ENERGY_MAX, 0, 1);
+  return BLUR_INTENSITY_MAX * (1 + BLUR_ENERGY_SCALE * fatigueT);
+}
+
+// Advance the blur state machine one frame. Called every draw() during
+// the game screen. Also safe to call on win/lose screens (stays idle).
+function _updateBlur() {
+  // Only trigger new blur events during active gameplay.
+  let gameActive = (currentScreen === "game");
+
+  switch (_blurState) {
+
+    case "idle":
+      _blurAmount = 0;
+      _setWorldBlur(0);
+      if (gameActive) {
+        _blurTimer--;
+        if (_blurTimer <= 0) {
+          // Start a new blur event.
+          _blurState = "fadein";
+          _blurTimer = BLUR_FADE_IN_FRAMES;
+        }
+      }
+      break;
+
+    case "fadein":
+      // t goes 0→1 over FADE_IN_FRAMES
+      _blurTimer--;
+      let tIn   = 1 - (_blurTimer / BLUR_FADE_IN_FRAMES);
+      _blurAmount = _peakBlur() * tIn;
+      _setWorldBlur(_blurAmount);
+      if (_blurTimer <= 0) {
+        _blurState = "hold";
+        _blurTimer = BLUR_HOLD_FRAMES;
+      }
+      break;
+
+    case "hold":
+      _blurAmount = _peakBlur();
+      _setWorldBlur(_blurAmount);
+      _blurTimer--;
+      if (_blurTimer <= 0) {
+        _blurState = "fadeout";
+        _blurTimer = BLUR_FADE_OUT_FRAMES;
+      }
+      break;
+
+    case "fadeout":
+      // t goes 1→0 over FADE_OUT_FRAMES
+      _blurTimer--;
+      let tOut  = _blurTimer / BLUR_FADE_OUT_FRAMES;
+      _blurAmount = _peakBlur() * tOut;
+      _setWorldBlur(_blurAmount);
+      if (_blurTimer <= 0) {
+        _blurAmount = 0;
+        _setWorldBlur(0);
+        _blurState = "idle";
+        // Schedule the next event with a fresh random interval.
+        _blurTimer = floor(random(BLUR_INTERVAL_MIN, BLUR_INTERVAL_MAX));
+      }
+      break;
+  }
+}
+
+// ── p5 lifecycle ──────────────────────────────────────────────
+
 function preload() {
   levelData = loadJSON("level1.json");
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+
+  // Create the world buffer at the same size as the canvas.
+  // It is resized in windowResized() to stay in sync.
+  _worldBuffer = createGraphics(windowWidth, windowHeight);
+
   initGame();
+  _initBlur();
 }
 
 function draw() {
+  // Advance the blur timer every frame regardless of screen.
+  _updateBlur();
+
   switch (currentScreen) {
     case "game": drawGame();       break;
     case "win":  drawWinScreen();  break;
@@ -77,14 +194,12 @@ function drawLoseScreen() {
   let ox = (width - PLAY_WIDTH) / 2;
   background(8, 6, 6);
 
-  // Dark red gradient inside the play column
   for (let i = 0; i < 8; i++) {
     let t = i / 8;
     fill(lerp(30, 10, t), lerp(8, 4, t), lerp(8, 4, t));
     rect(ox, (i * height) / 8, PLAY_WIDTH, height / 8);
   }
 
-  // Flickering ember particles
   randomSeed(77);
   for (let i = 0; i < 28; i++) {
     let ex    = ox + random(PLAY_WIDTH);
@@ -130,11 +245,11 @@ function keyPressed() {
   if (currentScreen === "game") {
     gameKeyPressed(keyCode);
   }
-  // R restarts from either end screen
   if ((currentScreen === "win" || currentScreen === "lose") &&
       (key === "r" || key === "R")) {
     currentScreen = "game";
     initGame();
+    _initBlur();
   }
 }
 
@@ -146,4 +261,9 @@ function keyReleased() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+  // Resize the world buffer to match. Resizing clears it, which is fine
+  // since it is fully redrawn every frame.
+  if (_worldBuffer) {
+    _worldBuffer.resizeCanvas(windowWidth, windowHeight);
+  }
 }
