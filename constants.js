@@ -95,7 +95,7 @@ const BALANCE_OVERSHOOT_TIRED = 0.11;
 // across one cycle. A stationary player on a 130 px platform will
 // feel a ±2–3 px oscillation and will never be walked off the edge.
 //
-const PLAYER_SWAY_AMP_BASE = 0.18;
+const PLAYER_SWAY_AMP_BASE = 0.05;
 // Always-on sway amplitude. 0.18 px/frame peak.
 // Over a 5-second cycle this produces ±2–3 px of visible drift.
 // ↑ 0.25 = more obvious idle wobble from the start
