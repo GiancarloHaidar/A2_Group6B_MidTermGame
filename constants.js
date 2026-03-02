@@ -4,15 +4,15 @@
 // ============================================================
 
 // ── Player dimensions ────────────────────────────────────────
-const PLAYER_W = 28;        // px
-const PLAYER_H = 40;        // px
+const PLAYER_W = 28; // px
+const PLAYER_H = 40; // px
 
 // ── Movement ─────────────────────────────────────────────────
-const MOVE_SPEED      = 3.8;  // px/frame max horizontal speed
+const MOVE_SPEED = 3.8; // px/frame max horizontal speed
 const GROUND_FRICTION = 0.25; // lerp toward target vx (0=instant stop, 1=no friction)
-const JUMP_FORCE      = -11.5; // negative = upward (px/frame)
-const GRAVITY         = 0.5;  // px/frame² added each frame
-const MAX_FALL_SPEED  = 18;   // terminal velocity (px/frame)
+const JUMP_FORCE = -11.5; // negative = upward (px/frame)
+const GRAVITY = 0.5; // px/frame² added each frame
+const MAX_FALL_SPEED = 18; // terminal velocity (px/frame)
 
 // ── Fast-fall ────────────────────────────────────────────────
 const FAST_FALL_MULTIPLIER = 3.0; // gravity multiplier when holding DOWN/S in air
@@ -35,10 +35,10 @@ const ENERGY_DRAIN_JUMP = 0.4;
 // Extra drain per frame when downward vy exceeds comfortable fall speed.
 // Only fires on fast falls — a normal landing costs nothing extra.
 const ENERGY_DRAIN_FALL_OVER = 0.08;
-const ENERGY_FALL_THRESHOLD  = 9;    // px/frame downward — below this, free fall
+const ENERGY_FALL_THRESHOLD = 9; // px/frame downward — below this, free fall
 
 // Deadzone: speed below this contributes nothing to drain (kills idle jitter).
-const ENERGY_MOVE_DEADZONE = 0.4;    // px/frame
+const ENERGY_MOVE_DEADZONE = 0.4; // px/frame
 
 // Below this the bar turns red and speed penalty kicks in hard.
 const ENERGY_LOW_THRESHOLD = 25;
@@ -46,8 +46,8 @@ const ENERGY_LOW_THRESHOLD = 25;
 const ENERGY_SPEED_MIN = 0.35;
 
 // Checkpoint restore: +40% of max, hard cap at 70% of max.
-const ENERGY_CHECKPOINT_ADD = 0.40;
-const ENERGY_CHECKPOINT_CAP = 0.70;
+const ENERGY_CHECKPOINT_ADD = 0.4;
+const ENERGY_CHECKPOINT_CAP = 0.7;
 
 // ── Balance Instability ──────────────────────────────────────
 // Two independent layers. Both are tunable via the constants below.
@@ -57,7 +57,7 @@ const ENERGY_CHECKPOINT_CAP = 0.70;
 // lower friction instead of GROUND_FRICTION (0.25).
 //   Normal stop: ~6 frames.   Drift stop: ~20 frames.
 // Flat across the whole level — consistent, readable.
-const BALANCE_DRIFT_FRICTION = 0.18;
+const BALANCE_DRIFT_FRICTION = 0.25;
 //   → Raise toward 0.25 to reduce drift. Lower toward 0.05 for icier feel.
 //   → Only active on the ground; air friction is unchanged.
 //
@@ -65,7 +65,7 @@ const BALANCE_DRIFT_FRICTION = 0.18;
 // A slow sine wave added to vx every frame regardless of height.
 // Flat amplitude — the player always feels slightly unsteady,
 // but it never gets worse as they climb.
-const PLAYER_SWAY_AMP  = 0.22; // px/frame — max sway when at full speed
+const PLAYER_SWAY_AMP = 0.22; // px/frame — max sway when at full speed
 //   Scaled by |vx|/MOVE_SPEED so idle player has zero sway (safe on any platform).
 //   → Raise to 0.35 for a more disorienting movement feel.
 //   → Lower to 0.10 for nearly imperceptible wobble during movement.
@@ -78,10 +78,10 @@ const PLAYER_SWAY_FREQ = 0.025; // radians/frame — sway cycle speed
 // Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t²
 // where altitude_t = 1 − (platform.baseY / LEVEL_HEIGHT).
 // Square curve: nearly zero in the lower half, strong near the summit.
-const PLAT_WOBBLE_AMP_MAX = 6;   // px — max side-to-side sweep at the summit
+const PLAT_WOBBLE_AMP_MAX = 10; // px — max side-to-side sweep at the summit
 //   6px = well within the safe margin on the narrowest platform (102px usable).
 //   → Raise to 10 for more challenge. Keep below 14 to stay fair.
-const PLAT_WOBBLE_FREQ    = 0.020; // radians/frame — platform oscillation speed
+const PLAT_WOBBLE_FREQ = 0.02; // radians/frame — platform oscillation speed
 //   → 0.020 → ~5s per full swing (very slow, clearly trackable).
 //   → Raise to 0.03 for a livelier swing.
 //
@@ -91,15 +91,15 @@ const PLAT_WOBBLE_FREQ    = 0.020; // radians/frame — platform oscillation spe
 const PLAYER_SWAY_CHECKPOINT_DAMPEN = 0.0;
 
 // ── UI layout ────────────────────────────────────────────────
-const UI_TOP_RESERVE = 56;  // px — widened from 48 to fit energy bar + zone label
+const UI_TOP_RESERVE = 56; // px — widened from 48 to fit energy bar + zone label
 
 // ── Camera ───────────────────────────────────────────────────
-const CAM_LERP     = 0.1;   // 0 = no follow, 1 = instant
-const CAM_ANCHOR_Y = 0.55;  // fraction of screen height where player is held
+const CAM_LERP = 0.1; // 0 = no follow, 1 = instant
+const CAM_ANCHOR_Y = 0.55; // fraction of screen height where player is held
 
 // ── Level / play column ──────────────────────────────────────
 // The game world is a fixed-width column centred on screen.
 // Platforms and player coords are in 0..PLAY_WIDTH space.
 // LEVEL_HEIGHT is the full scrollable height of that column.
-const PLAY_WIDTH   = 800;   // px — width of the playable column (world units)
-const LEVEL_HEIGHT = 4000;  // px — total scrollable height
+const PLAY_WIDTH = 800; // px — width of the playable column (world units)
+const LEVEL_HEIGHT = 4000; // px — total scrollable height
