@@ -154,45 +154,18 @@ class Player {
     this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
   }
 
-  // ── Balance sway ─────────────────────────────────────────────
-  // Called once per frame from update(), just before position integration.
-  //
-  // Two independent mechanisms:
-  //
-  // 1. DRIFT (lazy deceleration) — handled above in the movement block by
-  //    switching to BALANCE_DRIFT_FRICTION when no key is held on the ground.
-  //    This method handles only the sine-wave sway component.
-  //
-  // 2. SWAY — a continuous sine wave added directly to vx. Amplitude scales
-  //    with altitude so low platforms feel stable and high ones feel precarious.
-  //    The wave runs even when the player is standing still, simulating
-  //    persistent postural sway rather than movement-triggered stumbles.
+  // ── Player body sway ─────────────────────────────────────────
+  // Constant low-amplitude sine wave added to vx — same everywhere in the level.
+  // Models persistent postural sway: the player always feels slightly unsteady
+  // but the effect never worsens with altitude (that's now the platform's job).
   _applyBalanceSway() {
-    // Advance the phase accumulator — independent of frameCount so it
-    // survives restarts, pauses, and future variable frame rates cleanly.
-    this._wobblePhase += WOBBLE_FREQ;
+    this._wobblePhase += PLAYER_SWAY_FREQ;
 
-    // altitude_t: 0 at the ground, 1 at the summit of LEVEL_HEIGHT.
-    // player.y decreases as they climb, so invert and normalise.
-    let altitude_t = constrain(1 - (this.y / LEVEL_HEIGHT), 0, 1);
+    // Checkpoint damping: fully suppressed when resting on a safe platform.
+    let checkpointMul = this.onCheckpoint ? PLAYER_SWAY_CHECKPOINT_DAMPEN : 1.0;
 
-    // Level scaling: levelNumber is 1-based; declared in sketch.js or gameScreen.js.
-    // Falls back to 1 gracefully if the variable doesn't exist yet.
-    let levelNum = (typeof levelNumber !== 'undefined') ? levelNumber : 1;
-    let levelMul = 1 + (levelNum - 1) * WOBBLE_LEVEL_SCALE;
-
-    // Checkpoint damping: multiplier goes to WOBBLE_CHECKPOINT_DAMPEN (default 0)
-    // while the player is resting on a safe platform.
-    let checkpointMul = this.onCheckpoint ? WOBBLE_CHECKPOINT_DAMPEN : 1.0;
-
-    // Final sway contribution to vx this frame.
-    let sway = WOBBLE_AMP * altitude_t * levelMul * checkpointMul
-               * sin(this._wobblePhase);
-
-    this.vx += sway;
-    // vx is not clamped here; the lerp in the movement block will absorb
-    // the sway contribution over subsequent frames, which is exactly the
-    // overcorrection / delayed stabilisation behaviour we want.
+    // Flat amplitude — no altitude_t multiplier.
+    this.vx += PLAYER_SWAY_AMP * checkpointMul * sin(this._wobblePhase);
   }
 
   // AABB: stand on top, block sides, block ceiling

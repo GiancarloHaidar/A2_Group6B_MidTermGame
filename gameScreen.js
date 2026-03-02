@@ -29,6 +29,12 @@ function initGame() {
       section:  p.section  || 'normal',
       laneKey:  p.laneKey  || 'C',
       isFinish: !!p.isFinish,
+      // ── Platform wobble ──────────────────────────────────
+      // baseX is the original, authoritative position from the JSON.
+      // p.x is mutated each frame to the current oscillated position.
+      // wobblePhase starts at a random offset so platforms don't sway in unison.
+      baseX:       p.x,
+      wobblePhase: random(TWO_PI),
     };
     platforms.push(plat);
     if (plat.isFinish) finishPlatform = plat;
@@ -46,6 +52,9 @@ function drawGame() {
 
   // ── Update ────────────────────────────────────────────────
   if (!winTriggered) {
+    // Advance platform positions BEFORE player.update() so the AABB
+    // collision this frame sees the correct updated platform x.
+    updatePlatformWobble();
     player.inputLeft  = _keys.left;
     player.inputRight = _keys.right;
     player.inputDown  = _keys.down;
@@ -94,6 +103,34 @@ function checkWin() {
 function checkExhaustion() {
   if (player.isExhausted) {
     currentScreen = "lose";
+  }
+}
+
+// ── Platform wobble ───────────────────────────────────────────
+// Called once per frame before player.update().
+// Mutates p.x to the current oscillated position based on altitude.
+// The AABB collision in Player._resolveAABB() reads p.x live — no
+// collision code changes needed. The finish platform is exempt.
+//
+// Amplitude formula: PLAT_WOBBLE_AMP_MAX × altitude_t²
+//   altitude_t = 1 − (p.baseY / LEVEL_HEIGHT)
+//   Square curve → nearly zero in the lower half, strong near summit.
+function updatePlatformWobble() {
+  for (let p of platforms) {
+    // Exempt: ground slab and finish platform never wobble.
+    if (p.isFinish || p.zone === 'ground') continue;
+
+    // altitude_t: 0 at ground level, 1 at the summit.
+    let altitude_t = constrain(1 - (p.y / LEVEL_HEIGHT), 0, 1);
+
+    // Square exponent: keeps lower platforms nearly still.
+    let amp = PLAT_WOBBLE_AMP_MAX * altitude_t * altitude_t;
+
+    // Skip if amplitude is negligible — saves sin() calls on low platforms.
+    if (amp < 0.05) continue;
+
+    p.wobblePhase += PLAT_WOBBLE_FREQ;
+    p.x = p.baseX + sin(p.wobblePhase) * amp;
   }
 }
 

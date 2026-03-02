@@ -50,43 +50,46 @@ const ENERGY_CHECKPOINT_ADD = 0.4;
 const ENERGY_CHECKPOINT_CAP = 0.7;
 
 // ── Balance Instability ──────────────────────────────────────
-// Physics-based approach — two independent layers added to vx each frame.
-// No random impulses. All effects are continuous and tunable.
+// Two independent layers. Both are tunable via the constants below.
 //
-// ── Layer 1: Drift (lazy deceleration after key release) ─────
-// When no horizontal key is held, vx decays toward 0 with this
-// lower friction instead of the normal GROUND_FRICTION (0.25).
-// Creates the "balance takes time to stabilise" feel.
-//   Normal friction stops in ~6 frames.
-//   Drift friction stops in ~20 frames — clearly noticeable coast.
+// ── Layer 1: Player drift (lazy deceleration after key release) ──
+// When no horizontal key is held, vx decays toward 0 using this
+// lower friction instead of GROUND_FRICTION (0.25).
+//   Normal stop: ~6 frames.   Drift stop: ~20 frames.
+// Flat across the whole level — consistent, readable.
 const BALANCE_DRIFT_FRICTION = 0.1;
-//   → Raise toward GROUND_FRICTION (0.25) to reduce drift effect.
-//   → Lower toward 0.05 for an icier, harder-to-control feel.
-//   → Only active on the ground; in-air friction is unchanged.
+//   → Raise toward 0.25 to reduce drift. Lower toward 0.05 for icier feel.
+//   → Only active on the ground; air friction is unchanged.
 //
-// ── Layer 2: Altitude-scaled sine sway ───────────────────────
-// A slow sine wave is added directly to vx every frame.
-// Amplitude scales from 0 at ground to WOBBLE_AMP at the summit.
-// The wave runs continuously — it doesn't care about input state.
-const WOBBLE_AMP = 0.6; // px/frame — max sway at summit
-//   → 0.6 = 16% of MOVE_SPEED — clearly felt, never unfair.
-//   → Raise to 0.9–1.2 for a more disruptive upper section.
-//   → Lower to 0.3 for barely-perceptible sway.
-const WOBBLE_FREQ = 0.04; // radians/frame — higher = faster oscillation
-//   → 0.04 → period ≈ 157 frames ≈ 2.6s per full sway cycle (body-sway speed).
-//   → 0.06 → ~1.7s per cycle (more agitated feeling).
-//   → 0.025 → ~4s per cycle (very slow, pendulum-like).
+// ── Layer 2: Player body sway (constant, not altitude-scaled) ──
+// A slow sine wave added to vx every frame regardless of height.
+// Flat amplitude — the player always feels slightly unsteady,
+// but it never gets worse as they climb.
+const PLAYER_SWAY_AMP = 0.25; // px/frame — constant sway contribution to vx
+//   → 0.25 = 6.5% of MOVE_SPEED — felt but never unfair.
+//   → Raise to 0.4 for a more pronounced wobble feeling.
+//   → Lower to 0.1 for barely-there postural noise.
+const PLAYER_SWAY_FREQ = 0.04; // radians/frame — sway cycle speed
+//   → 0.04 → ~2.6s per full cycle. 0.06 → ~1.7s. 0.025 → ~4s.
 //
-// ── Level scaling (future levels) ────────────────────────────
-// Multiply WOBBLE_AMP by this factor per level number.
-// Level 1 = ×1.0, Level 2 = ×1.4, Level 3 = ×1.8 etc.
-const WOBBLE_LEVEL_SCALE = 0.4; // added to multiplier per level above 1
-//   → Set to 0 to disable cross-level scaling entirely.
+// ── Layer 3: Platform wobble (altitude-scaled, env instability) ──
+// Platforms at high altitude oscillate horizontally.
+// Amplitude = PLAT_WOBBLE_AMP_MAX × altitude_t²
+// where altitude_t = 1 − (platform.baseY / LEVEL_HEIGHT).
+// Square curve: nearly zero in the lower half, strong near the summit.
+const PLAT_WOBBLE_AMP_MAX = 14; // px — max side-to-side sweep at the summit
+//   → 14px at summit = clearly visible sway. Player walk (3.8px/fr) can oppose it.
+//   → Raise to 20 for a very challenging upper section.
+//   → Lower to 8 for subtle environmental movement.
+const PLAT_WOBBLE_FREQ = 0.025; // radians/frame — platform oscillation speed
+//   → 0.025 → ~4s per full swing (slow, pendulum-like).
+//   → 0.04  → ~2.6s (more active).
+//   → Keep ≤ 0.05 so players can track the platform visually.
 //
 // ── Checkpoint suppression ────────────────────────────────────
-// Sway amplitude is multiplied by this when onCheckpoint is true.
-// 0 = fully suppressed. 0.3 = still 30% sway even at checkpoint.
-const WOBBLE_CHECKPOINT_DAMPEN = 0.0;
+// Player sway drops to this fraction when onCheckpoint is true.
+// 0.0 = fully suppressed at checkpoints.
+const PLAYER_SWAY_CHECKPOINT_DAMPEN = 0.0;
 
 // ── UI layout ────────────────────────────────────────────────
 const UI_TOP_RESERVE = 56; // px — widened from 48 to fit energy bar + zone label
