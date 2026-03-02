@@ -17,16 +17,16 @@ class Player {
     this.facingRight = true;
 
     // Input flags (set by gameScreen.js)
-    this.inputLeft  = false;
+    this.inputLeft = false;
     this.inputRight = false;
-    this.inputJump  = false; // single-frame flag
-    this.inputDown  = false; // held: fast-fall
+    this.inputJump = false; // single-frame flag
+    this.inputDown = false; // held: fast-fall
 
     // ── Energy ────────────────────────────────────────────────
     // energy runs from 0 (exhausted) to ENERGY_MAX (full).
     // isExhausted is set true the moment energy hits 0 and locks
     // movement until the level is restarted or a checkpoint refills.
-    this.energy      = ENERGY_MAX;
+    this.energy = ENERGY_MAX;
     this.isExhausted = false;
 
     // ── Balance instability ──────────────────────────────────
@@ -34,8 +34,8 @@ class Player {
     // a checkpoint platform — suppresses sway while resting.
     // _wobblePhase is a continuous phase accumulator (radians) so the
     // wobble cycle doesn't reset when the player lands or jumps.
-    this.onCheckpoint  = false;
-    this._wobblePhase  = 0;   // radians, advances WOBBLE_FREQ each frame
+    this.onCheckpoint = false;
+    this._wobblePhase = 0; // radians, advances WOBBLE_FREQ each frame
   }
 
   // ── Energy helpers ───────────────────────────────────────────
@@ -78,11 +78,12 @@ class Player {
       // Fall surcharge: only when falling fast (vy large & positive = downward).
       // Normal gravity descent costs nothing; a hard fall after a miss does.
       if (this.vy > ENERGY_FALL_THRESHOLD) {
-        this.energy -= ENERGY_DRAIN_FALL_OVER * (this.vy - ENERGY_FALL_THRESHOLD);
+        this.energy -=
+          ENERGY_DRAIN_FALL_OVER * (this.vy - ENERGY_FALL_THRESHOLD);
       }
 
       if (this.energy <= 0) {
-        this.energy      = 0;
+        this.energy = 0;
         this.isExhausted = true;
       }
     }
@@ -96,25 +97,26 @@ class Player {
 
     let hasHorizInput = this.inputLeft || this.inputRight;
     let targetVx = 0;
-    if (this.inputLeft)  targetVx -= effectiveSpeed;
+    if (this.inputLeft) targetVx -= effectiveSpeed;
     if (this.inputRight) targetVx += effectiveSpeed;
 
     // Drift friction: when no key is held AND on the ground, use the
     // slower BALANCE_DRIFT_FRICTION so the player coasts to a stop over
     // ~20 frames instead of ~6 — the "balance takes time to stabilise" feel.
     // In the air, always use normal friction so jump arcs stay predictable.
-    let friction = (hasHorizInput || !this.onGround)
-      ? GROUND_FRICTION
-      : BALANCE_DRIFT_FRICTION;
+    let friction =
+      hasHorizInput || !this.onGround
+        ? GROUND_FRICTION
+        : BALANCE_DRIFT_FRICTION;
     this.vx = lerp(this.vx, targetVx, friction);
 
     if (this.inputRight) this.facingRight = true;
-    if (this.inputLeft)  this.facingRight = false;
+    if (this.inputLeft) this.facingRight = false;
 
     // ── Jump ────────────────────────────────────────────────
     // Exhausted player cannot initiate a jump; they fall where they stand.
     if (this.inputJump && this.onGround && !this.isExhausted) {
-      this.vy    = JUMP_FORCE;
+      this.vy = JUMP_FORCE;
       this.onGround = false;
       // Flat energy cost per jump. Deducted at takeoff, not over time.
       // Spam-jumping or missing a platform and re-jumping repeatedly burns budget.
@@ -155,17 +157,22 @@ class Player {
   }
 
   // ── Player body sway ─────────────────────────────────────────
-  // Constant low-amplitude sine wave added to vx — same everywhere in the level.
-  // Models persistent postural sway: the player always feels slightly unsteady
-  // but the effect never worsens with altitude (that's now the platform's job).
+  // Sine wave added to vx, scaled by the player's current speed.
+  // When standing still: |vx|≈0 → sway≈0 → safe on any platform edge.
+  // When moving at full speed: sway = PLAYER_SWAY_AMP → imprecise steering feel.
+  // This prevents the unavoidable idle drift that caused falls with a flat amplitude.
   _applyBalanceSway() {
     this._wobblePhase += PLAYER_SWAY_FREQ;
 
     // Checkpoint damping: fully suppressed when resting on a safe platform.
     let checkpointMul = this.onCheckpoint ? PLAYER_SWAY_CHECKPOINT_DAMPEN : 1.0;
 
-    // Flat amplitude — no altitude_t multiplier.
-    this.vx += PLAYER_SWAY_AMP * checkpointMul * sin(this._wobblePhase);
+    // Scale sway by how fast the player is currently moving.
+    // min(..., 1.0) caps at full amplitude — no stacking above PLAYER_SWAY_AMP.
+    let speedScale = min(abs(this.vx) / MOVE_SPEED, 1.0);
+
+    this.vx +=
+      PLAYER_SWAY_AMP * speedScale * checkpointMul * sin(this._wobblePhase);
   }
 
   // AABB: stand on top, block sides, block ceiling
@@ -180,14 +187,14 @@ class Player {
       return;
 
     // Calculate overlap on each axis
-    let overlapLeft  = this.x + this.w - p.x;
+    let overlapLeft = this.x + this.w - p.x;
     let overlapRight = p.x + p.w - this.x;
-    let overlapTop   = this.y + this.h - p.y;
-    let overlapBot   = p.y + p.h - this.y;
+    let overlapTop = this.y + this.h - p.y;
+    let overlapBot = p.y + p.h - this.y;
 
     // Push out along the axis of smallest overlap
     let minX = min(overlapLeft, overlapRight);
-    let minY = min(overlapTop,  overlapBot);
+    let minY = min(overlapTop, overlapBot);
 
     if (minY < minX) {
       // Vertical resolution
@@ -221,14 +228,18 @@ class Player {
     //   isExhausted     : dull red-grey
     let bodyR, bodyG, bodyB;
     if (this.isExhausted) {
-      bodyR = 190; bodyG = 90;  bodyB = 80;
+      bodyR = 190;
+      bodyG = 90;
+      bodyB = 80;
     } else if (this.energy < ENERGY_LOW_THRESHOLD) {
       let t = this.energy / ENERGY_LOW_THRESHOLD; // 0 near death, 1 at threshold
       bodyR = 220;
-      bodyG = round(lerp(90,  200, t));
-      bodyB = round(lerp(80,  160, t));
+      bodyG = round(lerp(90, 200, t));
+      bodyB = round(lerp(80, 160, t));
     } else {
-      bodyR = 220; bodyG = 200; bodyB = 160; // original colour
+      bodyR = 220;
+      bodyG = 200;
+      bodyB = 160; // original colour
     }
     fill(bodyR, bodyG, bodyB);
     noStroke();
@@ -243,10 +254,18 @@ class Player {
     stroke(180, 160, 120);
     strokeWeight(2);
     if (this.onGround) {
-      line(this.x + this.w * 0.3, this.y + this.h,
-           this.x + this.w * 0.2, this.y + this.h + 8);
-      line(this.x + this.w * 0.7, this.y + this.h,
-           this.x + this.w * 0.8, this.y + this.h + 8);
+      line(
+        this.x + this.w * 0.3,
+        this.y + this.h,
+        this.x + this.w * 0.2,
+        this.y + this.h + 8,
+      );
+      line(
+        this.x + this.w * 0.7,
+        this.y + this.h,
+        this.x + this.w * 0.8,
+        this.y + this.h + 8,
+      );
     }
     noStroke();
   }
