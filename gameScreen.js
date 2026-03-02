@@ -11,6 +11,14 @@ let finishPlatform = null;
 let winTriggered   = false;
 let winAnimTimer   = 0;
 
+// ── Altitude mapping ─────────────────────────────────────────
+// Computed once in initGame() from levelData geometry.
+// _groundY  : world Y of the ground platform top surface (= 0 km)
+// _climbPx  : pixel distance from ground to finish platform top (= 100 km)
+// altKm = clamp(((_groundY - playerFeetY) / _climbPx) * 100, 0, 100)
+let _groundY  = 0;
+let _climbPx  = 1; // safe default avoids divide-by-zero before initGame runs
+
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
@@ -45,6 +53,16 @@ function initGame() {
   cam   = new Camera2D();
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
   cam.y = constrain(cam.y, 0, max(0, LEVEL_HEIGHT - height));
+
+  // ── Altitude mapping setup ────────────────────────────────
+  // Ground Y = top surface of the platform with zone "ground".
+  // Finish Y = top surface of the finish platform (player feet when standing on it).
+  // These are read live from levelData so they stay correct if the level changes.
+  const groundPlat = levelData.platforms.find(p => p.zone === 'ground');
+  _groundY = groundPlat ? groundPlat.y : LEVEL_HEIGHT;
+  _climbPx = finishPlatform
+    ? max(1, _groundY - finishPlatform.y)   // max(1,...) guards against divide-by-zero
+    : LEVEL_HEIGHT;
 }
 
 function drawGame() {
@@ -361,8 +379,14 @@ function drawUI() {
     text("! LOW ENERGY !", ox + PLAY_WIDTH / 2, barTopY + barH + 5);
   }
 
+  // ── Altitude (km) — mapped to 0–100 km (Kármán line) ───────
+  // playerFeetY = player.y + PLAYER_H (bottom edge of player sprite).
+  // altKm maps that onto [0, 100] using the ground→finish distance.
+  let playerFeetY = player.y + PLAYER_H;
+  let altKm       = constrain((_groundY - playerFeetY) / _climbPx * 100, 0, 100);
+
   // ── Zone label — far right of HUD strip ──────────────────
-  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
+  let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h)); // kept for getZoneLabel
   let zoneName = getZoneLabel(altitude);
   fill(140, 155, 182, 140);
   noStroke();
@@ -371,23 +395,38 @@ function drawUI() {
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
   // ── Altitude bar (right edge of play column, below HUD) ──
-  let pct      = altitude / LEVEL_HEIGHT;
+  // Fill fraction = altKm / 100, so bar reaches top exactly at the finish platform.
   let barX     = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
   let barHA    = height * 0.55;
 
+  // Track
   fill(255, 255, 255, 15);
+  noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
-  fill(140, 210, 255, 180);
-  let fillH = barHA * pct;
-  rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
+  // Fill — colour shifts blue→cyan→white as player approaches the Kármán line
+  let altFrac = altKm / 100;
+  let aR = round(lerp(80,  220, altFrac));
+  let aG = round(lerp(140, 240, altFrac));
+  let aB = 255;
+  fill(aR, aG, aB, 180);
+  let fillH = barHA * altFrac;
+  if (fillH > 2) rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
 
-  fill(180, 220, 255, 200);
+  // Kármán line marker at the very top of the track
+  stroke(200, 230, 255, 80);
+  strokeWeight(1);
+  line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
-  textAlign(RIGHT, TOP);
+
+  // km readout above the bar — shows integer km, switches to "100 km" at finish
+  fill(aR, aG, aB, 200);
+  textAlign(RIGHT, BOTTOM);
   textSize(11);
-  text(floor(altitude) + "m", barX - 4, barTopYA);
+  textFont("monospace");
+  let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
+  text(kmLabel, barX + 8, barTopYA - 2);
 
   // ── Win flash overlay ──────────────────────────────────────
   if (winTriggered) {
