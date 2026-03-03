@@ -53,5 +53,3 @@ Mayo Clinic Staff. 2024. *Multiple sclerosis*. Mayo Clinic. Retrieved March 2, 2
 MS Society. 2023. *MS eye and vision problems*. MS Society. Retrieved March 2, 2026 from https://www.mssociety.org.uk/about-ms/signs-and-symptoms/eyes-and-sight
 
 National MS Society. n.d. *Vertigo and Dizziness with MS*. National Multiple Sclerosis Society. Retrieved March 2, 2026 from https://www.nationalmssociety.org/understanding-ms/what-is-ms/ms-symptoms/vertigo-dizziness
-
----
