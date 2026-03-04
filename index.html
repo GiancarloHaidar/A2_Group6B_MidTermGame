@@ -1,17 +1,18 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vertical Platformer – Level 1</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css" />
     <script src="libraries/p5.min.js"></script>
   </head>
   <body>
-    <!-- Load order matters: constants → classes → screens → conductor -->
+    <!-- Load order matters: constants → classes → visuals → screens → conductor -->
     <script src="constants.js"></script>
     <script src="Player.js"></script>
     <script src="Camera2D.js"></script>
+    <script src="Level1Visuals.js"></script>
     <script src="gameScreen.js"></script>
     <script src="sketch.js"></script>
   </body>

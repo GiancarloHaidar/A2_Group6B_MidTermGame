@@ -15,35 +15,35 @@ let _keys = { left: false, right: false, down: false };
 
 // ── Finish / win state ───────────────────────────────────────
 let finishPlatform = null;
-let winTriggered   = false;
-let winAnimTimer   = 0;
+let winTriggered = false;
+let winAnimTimer = 0;
 
 // ── Altitude mapping ─────────────────────────────────────────
-let _groundY  = 0;
-let _climbPx  = 1;
+let _groundY = 0;
+let _climbPx = 1;
 
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
 
 function initGame() {
-  platforms      = [];
+  platforms = [];
   finishPlatform = null;
-  winTriggered   = false;
-  winAnimTimer   = 0;
+  winTriggered = false;
+  winAnimTimer = 0;
 
   for (let p of levelData.platforms) {
     const plat = {
-      x:           p.x,
-      y:           p.y,
-      w:           p.w,
-      h:           p.h,
-      color:       p.color    || [80, 80, 90],
-      zone:        p.zone     || 'normal',
-      section:     p.section  || 'normal',
-      laneKey:     p.laneKey  || 'C',
-      isFinish:    !!p.isFinish,
-      baseX:       p.x,
+      x: p.x,
+      y: p.y,
+      w: p.w,
+      h: p.h,
+      color: p.color || [80, 80, 90],
+      zone: p.zone || "normal",
+      section: p.section || "normal",
+      laneKey: p.laneKey || "C",
+      isFinish: !!p.isFinish,
+      baseX: p.x,
       wobblePhase: random(TWO_PI),
     };
     platforms.push(plat);
@@ -52,11 +52,11 @@ function initGame() {
 
   player = new Player(levelData.startX, levelData.startY);
 
-  cam   = new Camera2D();
+  cam = new Camera2D();
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
   cam.y = constrain(cam.y, 0, max(0, LEVEL_HEIGHT - height));
 
-  const groundPlat = levelData.platforms.find(p => p.zone === 'ground');
+  const groundPlat = levelData.platforms.find((p) => p.zone === "ground");
   _groundY = groundPlat ? groundPlat.y : LEVEL_HEIGHT;
   _climbPx = finishPlatform
     ? max(1, _groundY - finishPlatform.y)
@@ -68,9 +68,9 @@ function drawGame() {
   // ── Logic update ────────────────────────────────────────────
   if (!winTriggered) {
     updatePlatformWobble();
-    player.inputLeft  = _keys.left;
+    player.inputLeft = _keys.left;
     player.inputRight = _keys.right;
-    player.inputDown  = _keys.down;
+    player.inputDown = _keys.down;
     player.update(platforms);
     checkWin();
     checkExhaustion();
@@ -82,28 +82,24 @@ function drawGame() {
   cam.update(player);
 
   // ── World rendering → _worldBuffer ──────────────────────────
-  let g  = _worldBuffer;
+  let g = _worldBuffer;
   let ox = getWorldOffsetX();
 
   g.clear();
   g.noStroke();
-  g.fill(10, 11, 16);
+  g.fill(10, 20, 80);
   g.rect(0, 0, g.width, g.height);
 
   g.push();
-    g.translate(ox, 0);
-    g.translate(-cam.x, -cam.y);
-    _drawColumnBackground(g);
-    _drawPlatforms(g);
-    if (finishPlatform) _drawFinishMarker(g, finishPlatform);
-    _drawPlayer(g);
+  g.translate(ox, 0);
+  g.translate(-cam.x, -cam.y);
+  _drawColumnBackground(g);
+  _drawPlatforms(g);
+  if (finishPlatform) _drawFinishMarker(g, finishPlatform);
+  _drawPlayer(g);
   g.pop();
 
   // ── Stamp buffer onto main canvas (with blur if active) ──────
-  // stampWorldBuffer() in sketch.js sets drawingContext.filter to
-  // "blur(Npx)" on the MAIN canvas before image(), then resets to
-  // "none". This is the only approach that actually works — CSS filter
-  // on the buffer element is ignored by p5's image() call.
   clear();
   stampWorldBuffer();
 
@@ -114,11 +110,12 @@ function drawGame() {
 // ── Win detection ─────────────────────────────────────────────
 function checkWin() {
   if (!finishPlatform || winTriggered) return;
-  const fp    = finishPlatform;
-  const onTop = player.onGround &&
-                player.x + player.w > fp.x &&
-                player.x < fp.x + fp.w &&
-                abs(player.y + player.h - fp.y) < 4;
+  const fp = finishPlatform;
+  const onTop =
+    player.onGround &&
+    player.x + player.w > fp.x &&
+    player.x < fp.x + fp.w &&
+    abs(player.y + player.h - fp.y) < 4;
   if (onTop) winTriggered = true;
 }
 
@@ -132,8 +129,8 @@ function checkExhaustion() {
 // ── Platform wobble (Layer 3) ─────────────────────────────────
 function updatePlatformWobble() {
   for (let p of platforms) {
-    if (p.isFinish || p.zone === 'ground') continue;
-    let altitude_t = constrain(1 - (p.y / LEVEL_HEIGHT), 0, 1);
+    if (p.isFinish || p.zone === "ground") continue;
+    let altitude_t = constrain(1 - p.y / LEVEL_HEIGHT, 0, 1);
     let amp = PLAT_WOBBLE_AMP_MAX * pow(altitude_t, PLAT_WOBBLE_CURVE);
     if (amp < 0.1) continue;
     p.wobblePhase += PLAT_WOBBLE_FREQ;
@@ -151,7 +148,7 @@ function refillCheckpoint() {
 // ══════════════════════════════════════════════════════════════
 
 function _drawFinishMarker(g, fp) {
-  const cx   = fp.x + fp.w / 2;
+  const cx = fp.x + fp.w / 2;
   const topY = fp.y;
 
   let pulse = 0.5 + 0.5 * sin(frameCount * 0.06);
@@ -167,10 +164,10 @@ function _drawFinishMarker(g, fp) {
   let wave = sin(frameCount * 0.08) * 6;
   g.fill(100, 220, 100);
   g.beginShape();
-    g.vertex(cx,             topY - 78);
-    g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
-    g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
-    g.vertex(cx,             topY - 56);
+  g.vertex(cx, topY - 78);
+  g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
+  g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
+  g.vertex(cx, topY - 56);
   g.endShape(CLOSE);
 
   g.fill(200, 255, 180, 180 + 60 * pulse);
@@ -182,9 +179,9 @@ function _drawFinishMarker(g, fp) {
 
   for (let s = 0; s < 4; s++) {
     let angle = frameCount * 0.04 + s * (PI / 2);
-    let r     = 28 + 4 * pulse;
-    let sx    = cx + cos(angle) * r;
-    let sy    = topY - 40 + sin(angle) * r * 0.5;
+    let r = 28 + 4 * pulse;
+    let sx = cx + cos(angle) * r;
+    let sy = topY - 40 + sin(angle) * r * 0.5;
     g.fill(255, 240, 100, 200);
     g.noStroke();
     _drawStar(g, sx, sy, 4, 8, 5);
@@ -196,7 +193,7 @@ function _drawStar(g, x, y, r1, r2, pts) {
   g.beginShape();
   for (let i = 0; i < pts * 2; i++) {
     let angle = (PI / pts) * i - PI / 2;
-    let r = (i % 2 === 0) ? r2 : r1;
+    let r = i % 2 === 0 ? r2 : r1;
     g.vertex(x + cos(angle) * r, y + sin(angle) * r);
   }
   g.endShape(CLOSE);
@@ -204,21 +201,35 @@ function _drawStar(g, x, y, r1, r2, pts) {
 
 function _drawColumnBackground(g) {
   g.noStroke();
-  let strips = 20;
+  let strips = 40;
   let stripH = LEVEL_HEIGHT / strips;
+
   for (let i = 0; i < strips; i++) {
-    let t = 1 - (i / strips);
-    g.fill(lerp(12, 20, t), lerp(18, 36, t), lerp(35, 62, t));
-    g.rect(0, i * stripH, PLAY_WIDTH, stripH);
+    // t = 1 at the bottom of the level, 0 at the top
+    let t = 1 - i / strips;
+
+    // Bottom (t=1): bright sky blue  [135, 195, 255]
+    // Top    (t=0): deep dark navy   [ 10,  20,  80]
+    let r = lerp(135, 10, t);
+    let gVal = lerp(195, 20, t);
+    let b = lerp(255, 80, t);
+
+    g.fill(r, gVal, b);
+    g.rect(0, i * stripH, PLAY_WIDTH, stripH + 1); // +1 prevents hairline gaps
   }
+
+  // Subtle edge vignette lines
   g.stroke(255, 255, 255, 6);
   g.strokeWeight(1);
   for (let lx = 4; lx <= 22; lx += 9) g.line(lx, 0, lx, LEVEL_HEIGHT);
-  for (let rx = PLAY_WIDTH - 4; rx >= PLAY_WIDTH - 22; rx -= 9) g.line(rx, 0, rx, LEVEL_HEIGHT);
+  for (let rx = PLAY_WIDTH - 4; rx >= PLAY_WIDTH - 22; rx -= 9)
+    g.line(rx, 0, rx, LEVEL_HEIGHT);
   g.noStroke();
+
+  // Side fade-to-dark vignette
   for (let i = 0; i < 50; i++) {
-    let a = map(i, 0, 50, 160, 0);
-    g.fill(8, 10, 16, a);
+    let a = map(i, 0, 50, 120, 0);
+    g.fill(0, 0, 30, a);
     g.rect(i, 0, 1, LEVEL_HEIGHT);
     g.rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
   }
@@ -229,11 +240,11 @@ function _drawPlatforms(g) {
   for (let p of platforms) {
     if (p.isFinish) continue;
 
-    const lk       = p.laneKey || 'C';
-    const isWall   = (lk === 'LL' || lk === 'RR');
-    const isPeak   = (p.section === 'Peak');
-    const isZigzag = (p.section === 'Zigzag');
-    const isNarrow = (p.w < 155);
+    const lk = p.laneKey || "C";
+    const isWall = lk === "LL" || lk === "RR";
+    const isPeak = p.section === "Peak";
+    const isZigzag = p.section === "Zigzag";
+    const isNarrow = p.w < 155;
 
     g.fill(p.color[0], p.color[1], p.color[2]);
     g.rect(p.x, p.y, p.w, p.h, 3);
@@ -245,8 +256,8 @@ function _drawPlatforms(g) {
     if (isWall) {
       g.noStroke();
       g.fill(255, 255, 255, 18);
-      if (lk === 'LL') g.rect(p.x,           p.y, 3, p.h, 3, 0, 0, 3);
-      else             g.rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
+      if (lk === "LL") g.rect(p.x, p.y, 3, p.h, 3, 0, 0, 3);
+      else g.rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
     }
 
     if (isPeak || (isZigzag && isNarrow)) {
@@ -274,20 +285,24 @@ function _drawPlatforms(g) {
 }
 
 function _drawPlayer(g) {
-  let p  = player;
+  let p = player;
   let cx = p.x + p.w / 2;
   let cy = p.y + p.h / 2;
 
   let bodyR, bodyG, bodyB;
   if (p.isExhausted) {
-    bodyR = 190; bodyG = 90;  bodyB = 80;
+    bodyR = 190;
+    bodyG = 90;
+    bodyB = 80;
   } else if (p.energy < ENERGY_LOW_THRESHOLD) {
     let t = p.energy / ENERGY_LOW_THRESHOLD;
     bodyR = 220;
-    bodyG = round(lerp(90,  200, t));
-    bodyB = round(lerp(80,  160, t));
+    bodyG = round(lerp(90, 200, t));
+    bodyB = round(lerp(80, 160, t));
   } else {
-    bodyR = 220; bodyG = 200; bodyB = 160;
+    bodyR = 220;
+    bodyG = 200;
+    bodyB = 160;
   }
   g.fill(bodyR, bodyG, bodyB);
   g.noStroke();
@@ -316,13 +331,13 @@ function drawUI() {
 
   let eFrac = constrain(player.energy / ENERGY_MAX, 0, 1);
 
-  let labelW  = 54;
-  let pctW    = 36;
-  let padX    = 12;
-  let barH    = 12;
+  let labelW = 54;
+  let pctW = 36;
+  let padX = 12;
+  let barH = 12;
   let barTopY = 10;
-  let trackX  = ox + padX + labelW;
-  let trackW  = PLAY_WIDTH - padX * 2 - labelW - pctW;
+  let trackX = ox + padX + labelW;
+  let trackW = PLAY_WIDTH - padX * 2 - labelW - pctW;
 
   fill(160, 170, 195, 190);
   noStroke();
@@ -346,9 +361,10 @@ function drawUI() {
     eB = 55;
   }
 
-  let pulseAlpha = (eFrac < ENERGY_LOW_THRESHOLD / ENERGY_MAX)
-    ? round(180 + 75 * sin(frameCount * 0.22))
-    : 255;
+  let pulseAlpha =
+    eFrac < ENERGY_LOW_THRESHOLD / ENERGY_MAX
+      ? round(180 + 75 * sin(frameCount * 0.22))
+      : 255;
 
   let fillW = trackW * eFrac;
   if (fillW > 4) {
@@ -378,7 +394,7 @@ function drawUI() {
   }
 
   let playerFeetY = player.y + PLAYER_H;
-  let altKm       = constrain((_groundY - playerFeetY) / _climbPx * 100, 0, 100);
+  let altKm = constrain(((_groundY - playerFeetY) / _climbPx) * 100, 0, 100);
 
   let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
   let zoneName = getZoneLabel(altitude);
@@ -388,16 +404,16 @@ function drawUI() {
   textSize(9);
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
-  let barX     = ox + PLAY_WIDTH - 22;
+  let barX = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
-  let barHA    = height * 0.55;
+  let barHA = height * 0.55;
 
   fill(255, 255, 255, 15);
   noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
   let altFrac = altKm / 100;
-  let aR = round(lerp(80,  220, altFrac));
+  let aR = round(lerp(80, 220, altFrac));
   let aG = round(lerp(140, 240, altFrac));
   let aB = 255;
   fill(aR, aG, aB, 180);
@@ -435,8 +451,11 @@ function drawUI() {
     fill(255, 255, 255, alpha);
     textAlign(CENTER, BOTTOM);
     textSize(13);
-    text("A/D or ← → move   ↑/W/Space jump   ↓/S fast-fall",
-         ox + PLAY_WIDTH / 2, height - 20);
+    text(
+      "A/D or ← → move   ↑/W/Space jump   ↓/S fast-fall",
+      ox + PLAY_WIDTH / 2,
+      height - 20,
+    );
   }
 
   textAlign(LEFT, BASELINE);
@@ -445,13 +464,13 @@ function drawUI() {
 function getZoneLabel(altitude) {
   const t = altitude / LEVEL_HEIGHT;
   if (t < 0.08) return "Ground";
-  if (t < 0.20) return "Left Wall";
-  if (t < 0.30) return "Bridge";
+  if (t < 0.2) return "Left Wall";
+  if (t < 0.3) return "Bridge";
   if (t < 0.42) return "Right Wall";
   if (t < 0.52) return "Bridge";
   if (t < 0.62) return "L↔C Zigzag";
   if (t < 0.72) return "R↔C Zigzag";
-  if (t < 0.80) return "Left Ledge";
+  if (t < 0.8) return "Left Ledge";
   if (t < 0.86) return "Crossing";
   if (t < 0.92) return "Right Ledge";
   if (t < 0.96) return "Crossing";
@@ -461,15 +480,14 @@ function getZoneLabel(altitude) {
 
 // ── Input routing ─────────────────────────────────────────────
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = true;
+  if (kc === LEFT_ARROW || kc === 65) _keys.left = true;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;
-  if (kc === DOWN_ARROW  || kc === 83) _keys.down  = true;
-  if (kc === UP_ARROW    || kc === 87 || kc === 32)
-    player.inputJump = true;
+  if (kc === DOWN_ARROW || kc === 83) _keys.down = true;
+  if (kc === UP_ARROW || kc === 87 || kc === 32) player.inputJump = true;
 }
 
 function gameKeyReleased(kc) {
-  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = false;
+  if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
-  if (kc === DOWN_ARROW  || kc === 83) _keys.down  = false;
+  if (kc === DOWN_ARROW || kc === 83) _keys.down = false;
 }
