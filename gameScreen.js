@@ -295,6 +295,18 @@ function _drawColumnBackground(g) {
     g.rect(i, 0, 1, LEVEL_HEIGHT);
     g.rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
   }
+
+  // ── Pixel grid overlay ───────────────────────────────────
+  g.stroke(0, 0, 0, 8);
+  g.strokeWeight(1);
+  let gridSize = 8;
+  for (let x = 0; x < PLAY_WIDTH; x += gridSize) {
+    g.line(x, 0, x, LEVEL_HEIGHT);
+  }
+  for (let y = 0; y < LEVEL_HEIGHT; y += gridSize) {
+    g.line(0, y, PLAY_WIDTH, y);
+  }
+  g.noStroke();
 }
 
 function _drawPlatforms(g) {
