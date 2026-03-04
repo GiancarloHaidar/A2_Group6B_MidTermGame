@@ -80,19 +80,24 @@ function _peakBlur() {
 // countdown is frozen so no event can be queued.
 function _updateBlur() {
   let gameActive = currentScreen === "game";
-  let energyDepleting = player && player.energy < ENERGY_MAX;
+  let energyDepleting = player && player.energy <= 70;
 
   switch (_blurState) {
     case "idle":
       _blurRadius = 0;
-      // Only count down when the game is active AND energy has started draining.
       if (gameActive && energyDepleting) {
+        // Recalculate the target interval every frame so the countdown
+        // accelerates in real-time as energy drains mid-idle.
+        let targetInterval = _nextIdleInterval();
+        // If the remaining timer exceeds what it should be at current
+        // fatigue, snap it down so we never wait longer than fatigue allows.
+        if (_blurTimer > targetInterval) {
+          _blurTimer = targetInterval;
+        }
         _blurTimer--;
         if (_blurTimer <= 0) {
           _blurState = "fadein";
           _blurTimer = BLUR_FADE_IN_FRAMES;
-          // Pre-compute how long the idle gap after this event will be,
-          // using current fatigue so it reflects the player's state now.
           _nextBlurInterval = _nextIdleInterval();
         }
       }

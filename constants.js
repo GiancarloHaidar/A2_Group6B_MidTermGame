@@ -101,7 +101,7 @@ const PLAYER_SWAY_AMP_BASE = 0.03;
 // ↑ 0.25 = more obvious idle wobble from the start
 // ↓ 0.10 = very faint — still readable but barely felt
 
-const PLAYER_SWAY_AMP_FATIGUE = 0.06;
+const PLAYER_SWAY_AMP_FATIGUE = 0.04;
 // Additional amplitude added at full fatigue (fatigueT = 1).
 // totalAmp at zero energy = 0.18 + 0.22 = 0.40 px/frame.
 // ↑ 0.30 = more punishing exhausted state
@@ -178,12 +178,12 @@ const BLUR_FADE_OUT_FRAMES = 45;
 // ↑ 90 = very slow clearing — unsettling.
 // ↓ 15 = quick snap clear.
 
-const BLUR_INTERVAL_MIN = 120;
+const BLUR_INTERVAL_MIN = 60;
 // Minimum idle frames between events at full fatigue (zero energy).
 // 120 ≈ 2 s. At exhaustion, blurs come fast and relentlessly.
 // ↓ 60 = near-constant blur at exhaustion
 
-const BLUR_INTERVAL_MAX = 360;
+const BLUR_INTERVAL_MAX = 180;
 // Idle frames between events when energy first starts dropping.
 // 360 ≈ 6 s. Early blur episodes are rare and easy to dismiss.
 // ↑ 600 = first blur feels like a surprise, long gaps early on
