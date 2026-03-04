@@ -100,7 +100,7 @@ function drawGame() {
     checkExhaustion();
   } else {
     winAnimTimer++;
-    if (winAnimTimer > 800) currentScreen = "win";
+    if (winAnimTimer > 200) currentScreen = "win";
   }
 
   cam.update(player);
