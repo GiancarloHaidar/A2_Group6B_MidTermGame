@@ -118,8 +118,9 @@ function drawGame() {
   g.translate(ox, 0);
   g.translate(-cam.x, -cam.y);
   _drawColumnBackground(g);
-  _drawGroundScenery(g); // trees + house — behind platforms and player
+  _drawGroundScenery(g);
   _drawPlatforms(g);
+  _drawPlayer(g);
   if (finishPlatform) _drawFinishMarker(g, finishPlatform);
   _drawPlayer(g);
   g.pop();
@@ -544,8 +545,9 @@ function drawUI() {
   if (millis() < 5000 && !winTriggered) {
     let alpha = map(millis(), 3000, 5000, 200, 0);
     alpha = constrain(alpha, 0, 200);
-    fill(255, 255, 255, alpha);
+    fill(20, 20, 60, alpha);
     textAlign(CENTER, BOTTOM);
+    textStyle(BOLD);
     textSize(13);
     text(
       "A/D or ← → move   ↑/W/Space jump   ↓/S fast-fall",
