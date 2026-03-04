@@ -3,7 +3,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden; /* prevent scrollbars from appearing during resize */
-  background: #12141e;
+  background: #87c3ff;
 }
 
 /* Let p5.js control canvas dimensions entirely.

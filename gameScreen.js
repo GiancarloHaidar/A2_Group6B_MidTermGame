@@ -103,8 +103,26 @@ function drawGame() {
   clear();
   stampWorldBuffer();
 
+  // ── Side panels (drawn on main canvas, outside play column) ──
+  _drawSidePanels(ox);
+
   // ── UI → main canvas (always drawn after filter reset) ───────
   drawUI();
+}
+
+// ── Side panels matching the dark navy theme ──────────────────
+function _drawSidePanels(ox) {
+  noStroke();
+  // Figure out what part of the level is currently visible
+  // and match the background colour at that altitude
+  let camMidY = cam.y + height * 0.5;
+  let t = 1 - constrain(camMidY / LEVEL_HEIGHT, 0, 1);
+  let r = lerp(135, 10, t);
+  let gVal = lerp(195, 20, t);
+  let b = lerp(255, 80, t);
+  fill(r, gVal, b);
+  rect(0, 0, ox, height);
+  rect(ox + PLAY_WIDTH, 0, width - ox - PLAY_WIDTH, height);
 }
 
 // ── Win detection ─────────────────────────────────────────────
@@ -215,7 +233,7 @@ function _drawColumnBackground(g) {
     let b = lerp(255, 80, t);
 
     g.fill(r, gVal, b);
-    g.rect(0, i * stripH, PLAY_WIDTH, stripH + 1); // +1 prevents hairline gaps
+    g.rect(0, i * stripH, PLAY_WIDTH, stripH + 1);
   }
 
   // Subtle edge vignette lines
@@ -226,10 +244,10 @@ function _drawColumnBackground(g) {
     g.line(rx, 0, rx, LEVEL_HEIGHT);
   g.noStroke();
 
-  // Side fade-to-dark vignette
-  for (let i = 0; i < 50; i++) {
-    let a = map(i, 0, 50, 120, 0);
-    g.fill(0, 0, 30, a);
+  // Very subtle side vignette — keep it light so it doesn't look dirty
+  for (let i = 0; i < 30; i++) {
+    let a = map(i, 0, 30, 25, 0);
+    g.fill(0, 10, 40, a);
     g.rect(i, 0, 1, LEVEL_HEIGHT);
     g.rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
   }
@@ -325,9 +343,14 @@ function _drawPlayer(g) {
 function drawUI() {
   let ox = getWorldOffsetX();
 
-  fill(10, 12, 20, 230);
+  // ── Top bar: dark navy, clearly separated from the game ──────
+  fill(10, 20, 80, 245);
   noStroke();
   rect(ox, 0, PLAY_WIDTH, UI_TOP_RESERVE);
+
+  // Thin bright bottom border on the top bar to separate it cleanly
+  fill(100, 160, 255, 80);
+  rect(ox, UI_TOP_RESERVE - 1, PLAY_WIDTH, 1);
 
   let eFrac = constrain(player.energy / ENERGY_MAX, 0, 1);
 
@@ -339,14 +362,14 @@ function drawUI() {
   let trackX = ox + padX + labelW;
   let trackW = PLAY_WIDTH - padX * 2 - labelW - pctW;
 
-  fill(160, 170, 195, 190);
+  fill(180, 200, 255, 220);
   noStroke();
   textFont("monospace");
   textSize(10);
   textAlign(LEFT, CENTER);
   text("ENERGY", ox + padX, barTopY + barH / 2);
 
-  fill(25, 30, 45);
+  fill(5, 10, 40);
   noStroke();
   rect(trackX, barTopY, trackW, barH, 4);
 
@@ -374,12 +397,12 @@ function drawUI() {
   }
 
   noFill();
-  stroke(70, 80, 105, 200);
+  stroke(80, 120, 200, 180);
   strokeWeight(1);
   rect(trackX, barTopY, trackW, barH, 4);
   noStroke();
 
-  fill(eR, eG, eB, 200);
+  fill(eR, eG, eB, 220);
   textAlign(LEFT, CENTER);
   textSize(10);
   text(floor(eFrac * 100) + "%", trackX + trackW + 5, barTopY + barH / 2);
@@ -398,17 +421,25 @@ function drawUI() {
 
   let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
   let zoneName = getZoneLabel(altitude);
-  fill(140, 155, 182, 140);
+
+  // Zone label — bright white so it's readable on the dark bar
+  fill(200, 220, 255, 220);
   noStroke();
   textAlign(RIGHT, CENTER);
   textSize(9);
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
+  // ── Altitude sidebar bar ──────────────────────────────────────
   let barX = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
   let barHA = height * 0.55;
 
-  fill(255, 255, 255, 15);
+  // Dark background track so the bar is visible against the light sky
+  fill(10, 20, 80, 160);
+  noStroke();
+  rect(barX - 4, barTopYA - 4, 16, barHA + 8, 6);
+
+  fill(255, 255, 255, 30);
   noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
@@ -416,20 +447,26 @@ function drawUI() {
   let aR = round(lerp(80, 220, altFrac));
   let aG = round(lerp(140, 240, altFrac));
   let aB = 255;
-  fill(aR, aG, aB, 180);
+  fill(aR, aG, aB, 220);
   let fillH = barHA * altFrac;
   if (fillH > 2) rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
 
-  stroke(200, 230, 255, 80);
+  stroke(180, 210, 255, 120);
   strokeWeight(1);
   line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
 
-  fill(aR, aG, aB, 200);
+  // Dark backing behind the km label so it's always readable
+  let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
   textAlign(RIGHT, BOTTOM);
   textSize(11);
   textFont("monospace");
-  let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
+
+  fill(10, 20, 80, 180);
+  noStroke();
+  rect(barX - 30, barTopYA - 18, 44, 16, 3);
+
+  fill(aR, aG, aB, 255);
   text(kmLabel, barX + 8, barTopYA - 2);
 
   if (winTriggered) {
