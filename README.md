@@ -26,14 +26,14 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 ## Post-Playtest:
 
--After playtesting the game, our group decided that, instead of having some platforms slippery to represent off-balance, we would have the player directly be icy, which better represents the user's struggle rather than in the environment
--During a second playtest, we decided it would be better to represent the struggle of MS in the player by reducing the original high energy by half to a medium-to-low level and implementing an energy hit based on how far the player fell.
--In our most notable improvement, our team changed the visual implementation of consistent blurriness to random to better reflect variability rather than a constant decline.
+- After playtesting the game, our group decided that, instead of having some platforms slippery to represent off-balance, we would have the player directly be icy, which better represents the user's struggle rather than in the environment
+- During a second playtest, we decided it would be better to represent the struggle of MS in the player by reducing the original high energy by half to a medium-to-low level and implementing an energy hit based on how far the player fell.
+- In our most notable improvement, our team changed the visual implementation of consistent blurriness to random to better reflect variability rather than a constant decline.
 
 ## Post-Showcase:
 
--Following our showcase,
--As for our last planned improvement,
+- Following our showcase,
+- As for our last planned improvement,
 
 ---
 
