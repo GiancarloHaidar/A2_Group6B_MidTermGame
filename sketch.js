@@ -25,11 +25,13 @@ let _worldBuffer = null;
 
 // ── Blur state machine ────────────────────────────────────────
 // States: "idle" | "fadein" | "hold" | "fadeout"
-// _blurTimer   : frames remaining in the current state
-// _blurRadius  : the blur value (px) to apply this frame (0 = clear)
+// _blurTimer        : frames remaining in the current state
+// _blurRadius       : the blur value (px) to apply this frame (0 = clear)
+// _nextBlurInterval : idle duration queued for after the current event ends
 let _blurState = "idle";
 let _blurTimer = 0;
 let _blurRadius = 0;
+let _nextBlurInterval = 0;
 
 let imgHouse;
 let imgTree;
@@ -46,11 +48,26 @@ function preload() {
 
 function _initBlur() {
   _blurState = "idle";
-  _blurTimer = floor(random(BLUR_INTERVAL_MIN, BLUR_INTERVAL_MAX));
+  _blurTimer = BLUR_INTERVAL_MAX; // start with a long pause before first event
   _blurRadius = 0;
+  _nextBlurInterval = 0;
 }
 
-// Peak blur radius for the current event, optionally boosted by fatigue.
+// Compute the idle interval for the next event based on current fatigue.
+// At low fatigue (high energy) → long gap (BLUR_INTERVAL_MAX).
+// At high fatigue (low energy) → short gap (BLUR_INTERVAL_MIN).
+function _nextIdleInterval() {
+  if (!player) return BLUR_INTERVAL_MAX;
+  let fatigueT = 1 - constrain(player.energy / ENERGY_MAX, 0, 1);
+  // lerp: fatigueT=0 → MAX, fatigueT=1 → MIN
+  let interval = lerp(BLUR_INTERVAL_MAX, BLUR_INTERVAL_MIN, fatigueT);
+  // Add a small random spread so events don't feel mechanical
+  return floor(interval + random(-20, 20));
+}
+
+// Peak blur radius for the current event, scaled by fatigue.
+// At full energy: BLUR_INTENSITY_MAX.
+// At zero energy: BLUR_INTENSITY_MAX × (1 + BLUR_ENERGY_SCALE).
 function _peakBlur() {
   if (!player) return BLUR_INTENSITY_MAX;
   let fatigueT = 1 - constrain(player.energy / ENERGY_MAX, 0, 1);
@@ -58,26 +75,32 @@ function _peakBlur() {
 }
 
 // Advance the state machine one frame and update _blurRadius.
-// Called at the top of draw() every frame.
+// Blur only fires while energy is below ENERGY_MAX (i.e. once the
+// player has spent any energy at all). At full energy the idle
+// countdown is frozen so no event can be queued.
 function _updateBlur() {
   let gameActive = currentScreen === "game";
+  let energyDepleting = player && player.energy < ENERGY_MAX;
 
   switch (_blurState) {
     case "idle":
       _blurRadius = 0;
-      if (gameActive) {
+      // Only count down when the game is active AND energy has started draining.
+      if (gameActive && energyDepleting) {
         _blurTimer--;
         if (_blurTimer <= 0) {
           _blurState = "fadein";
           _blurTimer = BLUR_FADE_IN_FRAMES;
+          // Pre-compute how long the idle gap after this event will be,
+          // using current fatigue so it reflects the player's state now.
+          _nextBlurInterval = _nextIdleInterval();
         }
       }
       break;
 
     case "fadein":
       _blurTimer--;
-      // tIn: 0 at start of fade-in, 1 at end
-      let tIn = 1 - _blurTimer / BLUR_FADE_IN_FRAMES;
+      let tIn = 1 - _blurTimer / BLUR_FADE_IN_FRAMES; // 0→1
       _blurRadius = _peakBlur() * tIn;
       if (_blurTimer <= 0) {
         _blurState = "hold";
@@ -96,13 +119,14 @@ function _updateBlur() {
 
     case "fadeout":
       _blurTimer--;
-      // tOut: 1 at start of fade-out, 0 at end
-      let tOut = _blurTimer / BLUR_FADE_OUT_FRAMES;
+      let tOut = _blurTimer / BLUR_FADE_OUT_FRAMES; // 1→0
       _blurRadius = _peakBlur() * tOut;
       if (_blurTimer <= 0) {
         _blurRadius = 0;
         _blurState = "idle";
-        _blurTimer = floor(random(BLUR_INTERVAL_MIN, BLUR_INTERVAL_MAX));
+        // Use the interval that was computed when this event started.
+        _blurTimer =
+          _nextBlurInterval > 0 ? _nextBlurInterval : _nextIdleInterval();
       }
       break;
   }
