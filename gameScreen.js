@@ -40,6 +40,12 @@ const SCENERY_HOUSE = {
   scale: 0.3,
 };
 
+// ── Astronaut sprite draw offsets (tune if alignment needs adjustment) ───
+const PLAYER_DRAW_OFFSET_X = -10; // px left/right relative to hitbox
+const PLAYER_DRAW_OFFSET_Y = -12; // px up/down relative to hitbox
+const PLAYER_DRAW_W = PLAYER_W + 20; // drawn width (can be wider than hitbox)
+const PLAYER_DRAW_H = PLAYER_H + 18; // drawn height (can be taller than hitbox)
+
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
@@ -341,39 +347,50 @@ function _drawPlatforms(g) {
 
 function _drawPlayer(g) {
   let p = player;
-  let cx = p.x + p.w / 2;
-  let cy = p.y + p.h / 2;
 
-  let bodyR, bodyG, bodyB;
+  if (!imgAstronaut) {
+    // Fallback: plain rect if image not yet loaded
+    g.fill(220, 200, 160);
+    g.noStroke();
+    g.rect(p.x, p.y, p.w, p.h, 4);
+    return;
+  }
+
+  // ── Tint based on energy state ───────────────────────────────
   if (p.isExhausted) {
-    bodyR = 190;
-    bodyG = 90;
-    bodyB = 80;
+    // Dark, desaturated — exhausted
+    g.tint(160, 100, 100);
   } else if (p.energy < ENERGY_LOW_THRESHOLD) {
-    let t = p.energy / ENERGY_LOW_THRESHOLD;
-    bodyR = 220;
-    bodyG = round(lerp(90, 200, t));
-    bodyB = round(lerp(80, 160, t));
+    // Warm red shift — tired
+    let t = p.energy / ENERGY_LOW_THRESHOLD; // 0=exhausted threshold, 1=normal threshold
+    let r = 255;
+    let gv = round(lerp(100, 230, t));
+    let b = round(lerp(80, 200, t));
+    g.tint(r, gv, b);
   } else {
-    bodyR = 220;
-    bodyG = 200;
-    bodyB = 160;
+    // Normal — no tint
+    g.noTint();
   }
-  g.fill(bodyR, bodyG, bodyB);
-  g.noStroke();
-  g.rect(p.x, p.y, p.w, p.h, 4);
 
-  let eyeOffsetX = p.facingRight ? p.w * 0.25 : -p.w * 0.25;
-  g.fill(50);
-  g.ellipse(cx + eyeOffsetX, cy - p.h * 0.15, 5, 5);
+  // ── Draw with horizontal flip for facing direction ───────────
+  let dw = PLAYER_DRAW_W;
+  let dh = PLAYER_DRAW_H;
+  let dx = p.x + PLAYER_DRAW_OFFSET_X;
+  let dy = p.y + PLAYER_DRAW_OFFSET_Y;
 
-  g.stroke(180, 160, 120);
-  g.strokeWeight(2);
-  if (p.onGround) {
-    g.line(p.x + p.w * 0.3, p.y + p.h, p.x + p.w * 0.2, p.y + p.h + 8);
-    g.line(p.x + p.w * 0.7, p.y + p.h, p.x + p.w * 0.8, p.y + p.h + 8);
+  if (p.facingRight) {
+    g.image(imgAstronaut, dx, dy, dw, dh);
+  } else {
+    // Flip horizontally: translate to right edge, scale x by -1
+    g.push();
+    g.translate(dx + dw, dy);
+    g.scale(-1, 1);
+    g.image(imgAstronaut, 0, 0, dw, dh);
+    g.pop();
   }
-  g.noStroke();
+
+  // Always clear tint after drawing so other images aren't affected
+  g.noTint();
 }
 
 // ── UI (drawn on main canvas after filter reset — never blurred) ──
