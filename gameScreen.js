@@ -29,7 +29,7 @@ let _climbPx = 1;
 //   roots/base look planted rather than floating.
 const SCENERY_GROUND_Y = 3950;
 const SCENERY_TREE_SINK = 18; // px the tree base overlaps into the ground
-const SCENERY_HOUSE_SINK = 50; // px the house base overlaps into the ground
+const SCENERY_HOUSE_SINK = 75; // px the house base overlaps into the ground
 
 // Tree PNG is ~1024px tall; scale 0.12 → ~123px  (≈3× player height)
 const SCENERY_TREES = [];
@@ -37,7 +37,7 @@ const SCENERY_TREES = [];
 // House PNG is ~1024px tall; scale 0.10 → ~102px  (≈2.5× player height)
 const SCENERY_HOUSE = {
   x: 30,
-  scale: 0.2,
+  scale: 0.3,
 };
 
 function getWorldOffsetX() {
