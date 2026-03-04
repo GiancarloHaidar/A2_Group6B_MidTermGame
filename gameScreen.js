@@ -298,8 +298,19 @@ function _drawColumnBackground(g) {
 
 function _drawPlatforms(g) {
   g.noStroke();
+
+  // ── Ground platform image ──────────────────────────────────
+  if (imgGround) {
+    const gp = platforms.find((p) => p.zone === "ground");
+    if (gp) {
+      // Draw at natural image height to avoid squishing the sprite
+      g.image(imgGround, gp.x, gp.y - 40, gp.w, imgGround.height);
+    }
+  }
+
   for (let p of platforms) {
     if (p.isFinish) continue;
+    if (p.zone === "ground") continue; // skip — drawn as image above
 
     const lk = p.laneKey || "C";
     const isWall = lk === "LL" || lk === "RR";
@@ -378,7 +389,7 @@ function _drawPlayer(g) {
   let dx = p.x + PLAYER_DRAW_OFFSET_X;
   let dy = p.y + PLAYER_DRAW_OFFSET_Y;
 
-  if (p.facingRight) {
+  if (!p.facingRight) {
     g.image(imgAstronaut, dx, dy, dw, dh);
   } else {
     // Flip horizontally: translate to right edge, scale x by -1

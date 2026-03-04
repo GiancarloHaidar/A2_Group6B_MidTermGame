@@ -34,12 +34,14 @@ let _blurRadius = 0;
 let imgHouse;
 let imgTree;
 let imgAstronaut;
+let imgGround;
 
 function preload() {
   levelData = loadJSON("level1.json");
   imgHouse = loadImage("Assets/house.png");
   imgTree = loadImage("Assets/tree.png");
   imgAstronaut = loadImage("Assets/astronaut.png");
+  imgGround = loadImage("Assets/ground.png");
 }
 
 function _initBlur() {
