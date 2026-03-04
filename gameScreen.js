@@ -22,6 +22,24 @@ let winAnimTimer = 0;
 let _groundY = 0;
 let _climbPx = 1;
 
+// ── Ground scenery layout ─────────────────────────────────────
+// All positions are in level-space (same coordinate system as platforms).
+// SCENERY_GROUND_Y = top of the ground platform (y=3950 in level1.json).
+// SCENERY_SINK = how many px each sprite is buried into the ground so
+//   roots/base look planted rather than floating.
+const SCENERY_GROUND_Y = 3950;
+const SCENERY_TREE_SINK = 18; // px the tree base overlaps into the ground
+const SCENERY_HOUSE_SINK = 50; // px the house base overlaps into the ground
+
+// Tree PNG is ~1024px tall; scale 0.12 → ~123px  (≈3× player height)
+const SCENERY_TREES = [];
+
+// House PNG is ~1024px tall; scale 0.10 → ~102px  (≈2.5× player height)
+const SCENERY_HOUSE = {
+  x: 30,
+  scale: 0.2,
+};
+
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
@@ -76,7 +94,7 @@ function drawGame() {
     checkExhaustion();
   } else {
     winAnimTimer++;
-    if (winAnimTimer > 90) currentScreen = "win";
+    if (winAnimTimer > 800) currentScreen = "win";
   }
 
   cam.update(player);
@@ -94,6 +112,7 @@ function drawGame() {
   g.translate(ox, 0);
   g.translate(-cam.x, -cam.y);
   _drawColumnBackground(g);
+  _drawGroundScenery(g); // trees + house — behind platforms and player
   _drawPlatforms(g);
   if (finishPlatform) _drawFinishMarker(g, finishPlatform);
   _drawPlayer(g);
@@ -113,8 +132,6 @@ function drawGame() {
 // ── Side panels matching the dark navy theme ──────────────────
 function _drawSidePanels(ox) {
   noStroke();
-  // Figure out what part of the level is currently visible
-  // and match the background colour at that altitude
   let camMidY = cam.y + height * 0.5;
   let t = 1 - constrain(camMidY / LEVEL_HEIGHT, 0, 1);
   let r = lerp(135, 10, t);
@@ -164,6 +181,33 @@ function refillCheckpoint() {
 // ══════════════════════════════════════════════════════════════
 // Private draw helpers — all accept a graphics context (g)
 // ══════════════════════════════════════════════════════════════
+
+// ── Ground scenery: trees (behind house) then house ───────────
+// imgHouse and imgTree are loaded in sketch.js preload().
+// Both sprites sit with their bottom edge on SCENERY_GROUND_Y.
+// No collision — purely visual.
+function _drawGroundScenery(g) {
+  if (!imgTree || !imgHouse) return;
+
+  // Trees first so they render behind the house.
+  // Sink base into the ground so roots look planted.
+  for (let t of SCENERY_TREES) {
+    let tw = imgTree.width * t.scale;
+    let th = imgTree.height * t.scale;
+    g.image(imgTree, t.x, SCENERY_GROUND_Y - th + SCENERY_TREE_SINK, tw, th);
+  }
+
+  // House — base sunk so it sits on the ground surface.
+  let hw = imgHouse.width * SCENERY_HOUSE.scale;
+  let hh = imgHouse.height * SCENERY_HOUSE.scale;
+  g.image(
+    imgHouse,
+    SCENERY_HOUSE.x,
+    SCENERY_GROUND_Y - hh + SCENERY_HOUSE_SINK,
+    hw,
+    hh,
+  );
+}
 
 function _drawFinishMarker(g, fp) {
   const cx = fp.x + fp.w / 2;
@@ -223,20 +267,14 @@ function _drawColumnBackground(g) {
   let stripH = LEVEL_HEIGHT / strips;
 
   for (let i = 0; i < strips; i++) {
-    // t = 1 at the bottom of the level, 0 at the top
     let t = 1 - i / strips;
-
-    // Bottom (t=1): bright sky blue  [135, 195, 255]
-    // Top    (t=0): deep dark navy   [ 10,  20,  80]
     let r = lerp(135, 10, t);
     let gVal = lerp(195, 20, t);
     let b = lerp(255, 80, t);
-
     g.fill(r, gVal, b);
     g.rect(0, i * stripH, PLAY_WIDTH, stripH + 1);
   }
 
-  // Subtle edge vignette lines
   g.stroke(255, 255, 255, 6);
   g.strokeWeight(1);
   for (let lx = 4; lx <= 22; lx += 9) g.line(lx, 0, lx, LEVEL_HEIGHT);
@@ -244,7 +282,6 @@ function _drawColumnBackground(g) {
     g.line(rx, 0, rx, LEVEL_HEIGHT);
   g.noStroke();
 
-  // Very subtle side vignette — keep it light so it doesn't look dirty
   for (let i = 0; i < 30; i++) {
     let a = map(i, 0, 30, 25, 0);
     g.fill(0, 10, 40, a);
@@ -343,12 +380,10 @@ function _drawPlayer(g) {
 function drawUI() {
   let ox = getWorldOffsetX();
 
-  // ── Top bar: dark navy, clearly separated from the game ──────
   fill(10, 20, 80, 245);
   noStroke();
   rect(ox, 0, PLAY_WIDTH, UI_TOP_RESERVE);
 
-  // Thin bright bottom border on the top bar to separate it cleanly
   fill(100, 160, 255, 80);
   rect(ox, UI_TOP_RESERVE - 1, PLAY_WIDTH, 1);
 
@@ -422,19 +457,16 @@ function drawUI() {
   let altitude = max(0, LEVEL_HEIGHT - (player.y + player.h));
   let zoneName = getZoneLabel(altitude);
 
-  // Zone label — bright white so it's readable on the dark bar
   fill(200, 220, 255, 220);
   noStroke();
   textAlign(RIGHT, CENTER);
   textSize(9);
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
-  // ── Altitude sidebar bar ──────────────────────────────────────
   let barX = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
   let barHA = height * 0.55;
 
-  // Dark background track so the bar is visible against the light sky
   fill(10, 20, 80, 160);
   noStroke();
   rect(barX - 4, barTopYA - 4, 16, barHA + 8, 6);
@@ -456,7 +488,6 @@ function drawUI() {
   line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
 
-  // Dark backing behind the km label so it's always readable
   let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
   textAlign(RIGHT, BOTTOM);
   textSize(11);

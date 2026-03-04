@@ -31,6 +31,15 @@ let _blurState = "idle";
 let _blurTimer = 0;
 let _blurRadius = 0;
 
+let imgHouse;
+let imgTree;
+
+function preload() {
+  levelData = loadJSON("level1.json");
+  imgHouse = loadImage("Assets/house.png");
+  imgTree = loadImage("Assets/tree.png");
+}
+
 function _initBlur() {
   _blurState = "idle";
   _blurTimer = floor(random(BLUR_INTERVAL_MIN, BLUR_INTERVAL_MAX));
@@ -112,10 +121,6 @@ function stampWorldBuffer() {
 }
 
 // ── p5 lifecycle ──────────────────────────────────────────────
-
-function preload() {
-  levelData = loadJSON("level1.json");
-}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
