@@ -46,6 +46,23 @@ const PLAYER_DRAW_OFFSET_Y = -12; // px up/down relative to hitbox
 const PLAYER_DRAW_W = PLAYER_W + 20; // drawn width (can be wider than hitbox)
 const PLAYER_DRAW_H = PLAYER_H + 18; // drawn height (can be taller than hitbox)
 
+// ── Cloud positions in level-space ───────────────────────────
+// Scattered through the middle altitude range (y ~800–2800).
+// x is within 0–PLAY_WIDTH. scale controls display size.
+// Alternate between Cloud1 and Cloud2 for variety.
+const CLOUD_DEFS = [
+  { type: 1, x: -20, y: 3000, scale: 0.9 }, // LEFT
+  { type: 1, x: 500, y: 2620, scale: 0.9 }, // RIGHT
+  { type: 2, x: -15, y: 2380, scale: 0.82 }, // LEFT
+  { type: 2, x: 500, y: 2150, scale: 0.85 }, // RIGHT
+  { type: 1, x: -20, y: 1870, scale: 0.76 }, // LEFT
+  { type: 1, x: 500, y: 1600, scale: 0.76 }, // RIGHT
+  { type: 2, x: -15, y: 1420, scale: 0.7 }, // LEFT
+  { type: 2, x: 615, y: 1170, scale: 0.85 }, // RIGHT
+  { type: 1, x: -20, y: 920, scale: 0.65 }, // LEFT
+  { type: 1, x: 605, y: 800, scale: 0.65 }, // RIGHT
+];
+
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
@@ -118,6 +135,7 @@ function drawGame() {
   g.translate(ox, 0);
   g.translate(-cam.x, -cam.y);
   _drawColumnBackground(g);
+  _drawClouds(g);
   _drawGroundScenery(g);
   _drawPlatforms(g);
   _drawPlayer(g);
@@ -188,6 +206,20 @@ function refillCheckpoint() {
 // ══════════════════════════════════════════════════════════════
 // Private draw helpers — all accept a graphics context (g)
 // ══════════════════════════════════════════════════════════════
+
+// ── Clouds scattered through the mid-altitude sky ────────────
+// Drawn after the background gradient but before platforms so they
+// sit behind everything else. Uses CLOUD_DEFS array defined above.
+function _drawClouds(g) {
+  if (!imgCloud1 || !imgCloud2) return;
+  g.noTint();
+  for (let c of CLOUD_DEFS) {
+    let img = c.type === 1 ? imgCloud1 : imgCloud2;
+    let cw = img.width * c.scale;
+    let ch = img.height * c.scale;
+    g.image(img, c.x, c.y, cw, ch);
+  }
+}
 
 // ── Ground scenery: trees (behind house) then house ───────────
 // imgHouse and imgTree are loaded in sketch.js preload().
