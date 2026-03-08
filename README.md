@@ -39,7 +39,7 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 # Assets
 
-None for now
+need to add music and talk about the assets jostlynn and jayna made
 
 ---
 

@@ -143,7 +143,6 @@ function drawGame() {
   _drawClouds(g);
   _drawGroundScenery(g);
   _drawPlatforms(g);
-  _drawPlayer(g);
   if (finishPlatform) _drawFinishMarker(g, finishPlatform);
   _drawPlayer(g);
   g.pop();
