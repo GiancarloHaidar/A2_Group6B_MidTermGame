@@ -13,6 +13,10 @@
 // ── Input state ──────────────────────────────────────────────
 let _keys = { left: false, right: false, down: false };
 
+// ── Instructions visibility ───────────────────────────────────
+// Stays false until the player presses any movement key for the first time.
+let _playerHasMoved = false;
+
 // ── Finish / win state ───────────────────────────────────────
 let finishPlatform = null;
 let winTriggered = false;
@@ -72,6 +76,7 @@ function initGame() {
   finishPlatform = null;
   winTriggered = false;
   winAnimTimer = 0;
+  _playerHasMoved = false;
 
   for (let p of levelData.platforms) {
     const plat = {
@@ -582,10 +587,8 @@ function drawUI() {
     textAlign(LEFT, BASELINE);
   }
 
-  if (millis() < 5000 && !winTriggered) {
-    let alpha = map(millis(), 3000, 5000, 200, 0);
-    alpha = constrain(alpha, 0, 200);
-    fill(20, 20, 60, alpha);
+  if (!_playerHasMoved && !winTriggered) {
+    fill(20, 20, 60, 200);
     textAlign(CENTER, BOTTOM);
     textStyle(BOLD);
     textSize(13);
@@ -618,10 +621,22 @@ function getZoneLabel(altitude) {
 
 // ── Input routing ─────────────────────────────────────────────
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW || kc === 65) _keys.left = true;
-  if (kc === RIGHT_ARROW || kc === 68) _keys.right = true;
-  if (kc === DOWN_ARROW || kc === 83) _keys.down = true;
-  if (kc === UP_ARROW || kc === 87 || kc === 32) player.inputJump = true;
+  if (kc === LEFT_ARROW || kc === 65) {
+    _keys.left = true;
+    _playerHasMoved = true;
+  }
+  if (kc === RIGHT_ARROW || kc === 68) {
+    _keys.right = true;
+    _playerHasMoved = true;
+  }
+  if (kc === DOWN_ARROW || kc === 83) {
+    _keys.down = true;
+    _playerHasMoved = true;
+  }
+  if (kc === UP_ARROW || kc === 87 || kc === 32) {
+    player.inputJump = true;
+    _playerHasMoved = true;
+  }
 }
 
 function gameKeyReleased(kc) {
