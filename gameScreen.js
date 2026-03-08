@@ -187,15 +187,11 @@ function checkExhaustion() {
 }
 
 // ── Platform wobble (Layer 3) ─────────────────────────────────
+// Disabled for Level 1: platforms are static so the intro is learnable
+// without the added challenge of moving surfaces. The wobble constants
+// in constants.js are retained for future levels.
 function updatePlatformWobble() {
-  for (let p of platforms) {
-    if (p.isFinish || p.zone === "ground") continue;
-    let altitude_t = constrain(1 - p.y / LEVEL_HEIGHT, 0, 1);
-    let amp = PLAT_WOBBLE_AMP_MAX * pow(altitude_t, PLAT_WOBBLE_CURVE);
-    if (amp < 0.1) continue;
-    p.wobblePhase += PLAT_WOBBLE_FREQ;
-    p.x = p.baseX + sin(p.wobblePhase) * amp;
-  }
+  // No-op in Level 1.
 }
 
 // ── Checkpoint refill ─────────────────────────────────────────
