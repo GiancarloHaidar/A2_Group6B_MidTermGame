@@ -359,7 +359,7 @@ function _drawPlatforms(g) {
     const isZigzag = p.section === "Zigzag";
     const isNarrow = p.w < 155;
 
-    g.fill(p.color[0], p.color[1], p.color[2]);
+    g.fill(p.color[0], p.color[1], p.color[2], 150);
     g.rect(p.x, p.y, p.w, p.h, 3);
 
     let hlAlpha = map(p.w, 130, 225, 12, 42);
@@ -382,7 +382,7 @@ function _drawPlatforms(g) {
     }
 
     g.noStroke();
-    g.fill(0, 0, 0, 32);
+    g.fill(0, 0, 0, 10);
     g.rect(p.x + 2, p.y + p.h, p.w - 4, 5, 0, 0, 3, 3);
   }
 
