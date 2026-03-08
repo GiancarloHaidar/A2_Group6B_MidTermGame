@@ -26,9 +26,9 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 ## Post-Playtest:
 
-- After playtesting the game, our group decided that, instead of having some platforms slippery to represent off-balance, we would have the player directly be icy, which better represents the user's struggle rather than in the environment
-- During a second playtest, we decided it would be better to represent the struggle of MS in the player by reducing the original high energy by half to a medium-to-low level and implementing an energy hit based on how far the player fell.
-- In our most notable improvement, our team changed the visual implementation of consistent blurriness to random to better reflect variability rather than a constant decline.
+- After playtesting the game, our group decided that, instead of having level 1 feature moving platforms to repersent "off balance" we would keep that as a mehcanic introduced in level 2
+- Secondly, we noted that we should change the colouring of the platforms in level 2 to make them better blend in with the platforms to include the symptom of colour blindess into level 1
+- In our most notable improvement, our team changed the visual implementation of consistent blurriness to having the bluriness appear after 30% energy is lost to reflect energy decreases > vision decreasing.
 
 ## Post-Showcase:
 
