@@ -194,7 +194,7 @@ function drawWinScreen() {
 
   for (let i = 0; i < 8; i++) {
     let t = i / 8;
-    fill(lerp(20, 10, t), lerp(60, 30, t), lerp(20, 15, t));
+    fill(lerp(10, 5, t), lerp(30, 15, t), lerp(60, 35, t));
     rect(ox, (i * height) / 8, PLAY_WIDTH, height / 8);
   }
 
@@ -203,13 +203,13 @@ function drawWinScreen() {
     let sx = ox + random(PLAY_WIDTH);
     let sy = random(height);
     let pulse = 0.5 + 0.5 * sin(frameCount * 0.05 + i);
-    fill(255, 240, 120, 80 + 120 * pulse);
+    fill(120, 220, 255, 80 + 120 * pulse);
     noStroke();
     drawWinStar(sx, sy, 3, 7, 5);
   }
 
   let bounce = sin(frameCount * 0.05) * 8;
-  fill(160, 255, 140);
+  fill(100, 200, 255);
   noStroke();
   textAlign(CENTER, CENTER);
   textSize(48);
@@ -217,13 +217,13 @@ function drawWinScreen() {
   text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 60 + bounce);
 
   textSize(18);
-  fill(200, 255, 180);
+  fill(180, 230, 255);
   text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 + 10);
 
   let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(14);
-    fill(160, 200, 160);
+    fill(140, 190, 240);
     text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 70);
   }
   textAlign(LEFT, BASELINE);
@@ -236,7 +236,7 @@ function drawLoseScreen() {
 
   for (let i = 0; i < 8; i++) {
     let t = i / 8;
-    fill(lerp(30, 10, t), lerp(8, 4, t), lerp(8, 4, t));
+    fill(lerp(35, 15, t), lerp(15, 6, t), lerp(4, 2, t));
     rect(ox, (i * height) / 8, PLAY_WIDTH, height / 8);
   }
 
@@ -245,13 +245,13 @@ function drawLoseScreen() {
     let ex = ox + random(PLAY_WIDTH);
     let ey = random(height);
     let pulse = 0.4 + 0.6 * sin(frameCount * 0.09 + i * 1.4);
-    fill(255, round(70 + 60 * pulse), 15, round(80 + 120 * pulse));
+    fill(255, round(150 + 60 * pulse), 20, round(80 + 120 * pulse));
     noStroke();
     ellipse(ex, ey, 5 * pulse, 5 * pulse);
   }
 
   let bounce = sin(frameCount * 0.04) * 6;
-  fill(240, 70, 60);
+  fill(255, 160, 20);
   noStroke();
   textAlign(CENTER, CENTER);
   textSize(44);
@@ -259,13 +259,13 @@ function drawLoseScreen() {
   text("EXHAUSTED", ox + PLAY_WIDTH / 2, height / 2 - 55 + bounce);
 
   textSize(16);
-  fill(210, 130, 120);
+  fill(230, 180, 100);
   text("You ran out of energy.", ox + PLAY_WIDTH / 2, height / 2 + 8);
 
   let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(13);
-    fill(180, 110, 105);
+    fill(200, 160, 80);
     text("Press R to try again", ox + PLAY_WIDTH / 2, height / 2 + 65);
   }
   textAlign(LEFT, BASELINE);

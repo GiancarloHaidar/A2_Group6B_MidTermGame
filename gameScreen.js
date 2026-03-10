@@ -575,10 +575,10 @@ function drawUI() {
 
   if (winTriggered) {
     let a = map(winAnimTimer, 0, 90, 0, 200);
-    fill(180, 255, 160, constrain(a, 0, 200));
+    fill(160, 210, 255, constrain(a, 0, 200));
     noStroke();
     rect(ox, 0, PLAY_WIDTH, height);
-    fill(30, 80, 30, constrain(a * 1.5, 0, 255));
+    fill(10, 40, 100, constrain(a * 1.5, 0, 255));
     textAlign(CENTER, CENTER);
     textSize(36);
     textFont("monospace");
