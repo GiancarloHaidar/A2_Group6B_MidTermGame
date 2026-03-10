@@ -19,9 +19,9 @@ const FAST_FALL_MULTIPLIER = 3.0; // gravity multiplier when holding DOWN/S in a
 
 // ── Energy / Fatigue ─────────────────────────────────────────
 const ENERGY_MAX = 100;
-const ENERGY_DRAIN_HORIZ = 0.008; // per px of horizontal travel
-const ENERGY_DRAIN_JUMP = 0.4; // flat cost per jump
-const ENERGY_DRAIN_FALL_OVER = 0.08; // extra drain per frame of hard fall
+const ENERGY_DRAIN_HORIZ = 0.0095; // per px of horizontal travel
+const ENERGY_DRAIN_JUMP = 0.47; // flat cost per jump
+const ENERGY_DRAIN_FALL_OVER = 0.095; // extra drain per frame of hard fall
 const ENERGY_FALL_THRESHOLD = 9; // px/frame downward before fall drain starts
 const ENERGY_MOVE_DEADZONE = 0.4; // px/frame — below this, no horiz drain
 const ENERGY_LOW_THRESHOLD = 25; // energy below this → bar turns red
