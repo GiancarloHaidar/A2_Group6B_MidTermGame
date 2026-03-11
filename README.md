@@ -12,7 +12,13 @@ Assignment 2: Mid-Term Game (Group Project)
 
 # Description:
 
-This game is a single-player vertical platformer inspired by Multiple Sclerosis (MS) that aims to reach the top level. Exhaustion, blindness, and off-balance physics are just a few of the symptoms that mimic MS that the user must deal with as they overcome the leap. The player must endure the conditions of the disability while overcoming the challenges of each level until they reach the end.
+challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
+
+Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics so that players experience these effects while navigating the environment.
+
+The game consists of a platform-based level where players must jump between platforms and navigate obstacles to reach the end of the level. Mechanics such as unstable movement, altered gravity, or visual distortion are used to represent how MS symptoms can affect movement and perception.
+
+The goal of the project is to create an engaging platformer that encourages empathy and understanding while still functioning as a fun gameplay experience.
 
 ---
 
@@ -26,9 +32,19 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 ## Post-Playtest:
 
-- After playtesting the game, our group decided that, instead of having level 1 feature moving platforms to repersent "off balance" we would keep that as a mehcanic introduced in level 2
-- Secondly, we noted that we should change the colouring of the platforms in level 2 to make them better blend in with the platforms to include the symptom of colour blindess into level 1
-- In our most notable improvement, our team changed the visual implementation of consistent blurriness to having the bluriness appear after 30% energy is lost to reflect energy decreases > vision decreasing.
+After the in-class playtesting session, our group observed how players interacted with the level and reviewed feedback from classmates. Based on these observations, we made several adjustments to improve clarity, difficulty progression, and gameplay flow.
+
+Change 1: Players reported that the first level felt too long and overwhelming for an introduction to the game mechanics. To improve onboarding, we shortened the level and reduced the number of platforms. This allows players to first learn the basic platforming mechanics before encountering more complex challenges in later levels.
+
+Change 2: Originally, several mechanics were introduced too early in the gameplay experience. Based on feedback, we decided to restructure the progression so that mechanics appear gradually across levels:
+
+- Level 1: Basic platform movement and environmental effects such as visual blur.
+- Level 2: Moving platforms and increased coordination challenges.
+- Level 3: Altered gravity and more difficult jumps to simulate instability and balance issues.
+
+This progression helps players understand the controls before experiencing more challenging mechanics.
+
+Change 3: During playtesting, some players struggled with the spacing and timing of jumps between platforms. We adjusted the distance between platforms and repositioned several jumps so that the difficulty increases more naturally as the level progresses.
 
 ## Post-Showcase:
 
@@ -38,6 +54,8 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 ---
 
 # Assets
+
+All of the assets that are used in this project are either original or sourced from free-use resources.
 
 Music Assets
 
@@ -52,12 +70,18 @@ Speech Video - made by Jayna on Capcut
 
 Sounds:
 Music: https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
+
 Jump: https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
+
 Grass: https://pixabay.com/sound-effects/film-special-effects-walk-on-grass-1-291984/
+
 Low Energy: https://pixabay.com/sound-effects/film-special-effects-factory-alarm-95712/
+
 Falling: https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
 Fail: https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
+
 Winning: https://pixabay.com/sound-effects/film-special-effects-winning-82808/
+
 Speaking: https://pixabay.com/sound-effects/film-special-effects-little-robot-sound-84657/
 
 ---
