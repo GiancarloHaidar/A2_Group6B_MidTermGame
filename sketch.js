@@ -26,11 +26,15 @@ let imgCloud1;
 let imgCloud2;
 
 let bgMusic;
+let jumpSound;
+let landingSound;
 
 function preload() {
   // Only JSON here — p5 waits for this before starting
   levelData = loadJSON("level1.json");
   bgMusic = loadSound("Assets/Background1.mp3");
+  jumpSound = loadSound("Assets/Jump.mp3");
+  landingSound = loadSound("Assets/Landing.mp3");
 }
 
 function _initBlur() {
@@ -122,6 +126,8 @@ function setup() {
   bgMusic.setVolume(0.4); // 0.0 (silent) to 1.0 (full)
   // Note: bgMusic.loop() is NOT called here to avoid browser autoplay block.
   // Music starts on the first keypress instead (see keyPressed below).
+  jumpSound.setVolume(0.6);
+  landingSound.setVolume(0.5);
 
   // Images loaded here — a missing file won't block the game from starting
   imgHouse = loadImage("Assets/house.png");
