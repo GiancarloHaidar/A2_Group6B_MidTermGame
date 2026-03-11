@@ -159,7 +159,7 @@ class Player {
 
     if (!this.onGround && this.vy > 0) {
       this._fallTimer++;
-      if (this._fallTimer > 20 && !this._fallSoundPlayed) {
+      if (this._fallTimer > 25 && !this._fallSoundPlayed) {
         if (typeof fallingSound !== "undefined" && fallingSound.isLoaded()) {
           fallingSound.play();
         }
