@@ -2,17 +2,20 @@
 // sketch.js — Conductor / Router
 // ============================================================
 
-let currentScreen = "intro"; // "intro" | "game" | "win" | "lose"  ← ADDED "intro"
+let currentScreen = "intro"; // "intro" | "game" | "win" | "lose"
 
 let player;
 let platforms;
 let cam;
 let levelData;
 
+// ── Star progression ──────────────────────────────────────────
+let _totalStars = 0; // cumulative stars earned this session
+let _starAwardedThisWin = false; // guard: award only once per win screen visit
+let _starAnimTimer = 0; // counts up when win screen opens (drives pop-in)
+const STAR_ANIM_DURATION = 40; // frames for the pop-in scale animation
+
 // ── Intro video ───────────────────────────────────────────────
-// We grab the <video> element already declared in index.html.
-// Using the native DOM element is the simplest approach — no
-// p5 createVideo() needed, no extra preload step.
 let _introVideo = null;
 
 // ── World graphics buffer ─────────────────────────────────────
@@ -53,19 +56,14 @@ function preload() {
 // ── Intro video helpers ───────────────────────────────────────
 
 function _startIntro() {
-  // Guard: don't start twice (the overlay script may call this too)
   if (window._introStarted) return;
   window._introStarted = true;
 
   const overlay = document.getElementById("startOverlay");
 
-  // If the overlay is still visible, wait for the user's click first.
-  // That click hides the overlay AND provides the browser gesture needed
-  // for audio playback. Once clicked, we kick off the video.
   if (overlay && overlay.style.display !== "none") {
     overlay.addEventListener("click", _playIntroVideo, { once: true });
   } else {
-    // Overlay already dismissed (or not present) — play immediately.
     _playIntroVideo();
   }
 }
@@ -76,15 +74,28 @@ function _playIntroVideo() {
   _introVideo.src = "Assets/intro.mp4";
   _introVideo.style.display = "block";
   _introVideo.style.position = "fixed";
-  _introVideo.style.top = "0";
-  _introVideo.style.left = "0";
-  _introVideo.style.width = "100%";
-  _introVideo.style.height = "100%";
-  _introVideo.style.objectFit = "cover";
+  _introVideo.style.top = "50%";
+  _introVideo.style.left = "50%";
+  _introVideo.style.transform = "translate(-50%, -50%)";
+  _introVideo.style.width = "90%";
+  _introVideo.style.height = "90%";
+  _introVideo.style.objectFit = "contain";
   _introVideo.style.zIndex = "10";
 
-  // Mute the video — bgMusic handles all audio
   _introVideo.muted = true;
+
+  const EARLY_BY_INTRO = 2.0;
+  let _btnShown = false;
+
+  _introVideo.addEventListener("timeupdate", function _checkEarlyIntro() {
+    if (_btnShown) return;
+    const remaining = _introVideo.duration - _introVideo.currentTime;
+    if (remaining <= EARLY_BY_INTRO) {
+      _btnShown = true;
+      _introVideo.removeEventListener("timeupdate", _checkEarlyIntro);
+      _onIntroEnded();
+    }
+  });
 
   _introVideo.addEventListener("ended", _onIntroEnded, { once: true });
 
@@ -93,16 +104,13 @@ function _playIntroVideo() {
     _onIntroEnded();
   });
 
-  // Start the background music now so it plays under the intro
-  // and continues uninterrupted into gameplay
   if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 }
 
 function _onIntroEnded() {
-  // Video has finished — pause on the last frame
   if (_introVideo) _introVideo.pause();
 
-  // Show the "CLICK TO CONTINUE" button
+  document.getElementById("continueBtnImg").src = "Assets/Continue.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
   btn.addEventListener("click", _onContinueClicked, { once: true });
@@ -111,27 +119,44 @@ function _onIntroEnded() {
 function _onContinueClicked() {
   document.getElementById("continueBtn").style.display = "none";
 
-  // Hide the finished intro video
   if (_introVideo) {
     _introVideo.style.display = "none";
     _introVideo = null;
   }
 
-  // Play Scene 2 instead of going straight to the game
   _playScene2();
 }
 
 // ── Scene 2 video ─────────────────────────────────────────────
 
 function _playScene2() {
-  // Reuse the same <video> element
   _introVideo = document.getElementById("introVideo");
 
   _introVideo.src = "Assets/Scene2.mp4";
-  _introVideo.style.display = "block";
-  _introVideo.muted = true; // bgMusic already playing
+  _introVideo.muted = true;
 
-  // Listen for Scene 2 ending — freeze and show the button again
+  _introVideo.style.display = "block";
+  _introVideo.style.position = "fixed";
+  _introVideo.style.width = "90%";
+  _introVideo.style.height = "90%";
+  _introVideo.style.top = "50%";
+  _introVideo.style.left = "50%";
+  _introVideo.style.transform = "translate(-50%, -50%)";
+  _introVideo.style.objectFit = "contain";
+
+  const EARLY_BY = 6.0;
+  let _btnShown = false;
+
+  _introVideo.addEventListener("timeupdate", function _checkEarly() {
+    if (_btnShown) return;
+    const remaining = _introVideo.duration - _introVideo.currentTime;
+    if (remaining <= EARLY_BY) {
+      _btnShown = true;
+      _introVideo.removeEventListener("timeupdate", _checkEarly);
+      _onScene2Ended();
+    }
+  });
+
   _introVideo.addEventListener("ended", _onScene2Ended, { once: true });
 
   _introVideo.play().catch(() => {
@@ -141,10 +166,9 @@ function _playScene2() {
 }
 
 function _onScene2Ended() {
-  // Freeze on last frame
   if (_introVideo) _introVideo.pause();
 
-  // Show the continue button one more time — this click goes to the game
+  document.getElementById("continueBtnImg").src = "Assets/StartButton.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
   btn.addEventListener("click", _onScene2Continued, { once: true });
@@ -156,11 +180,10 @@ function _onScene2Continued() {
     _introVideo.style.display = "none";
     _introVideo = null;
   }
-  // Now enter the game
   currentScreen = "game";
 }
 
-// ── Blur helpers (unchanged) ──────────────────────────────────
+// ── Blur helpers ──────────────────────────────────────────────
 
 function _initBlur() {
   _blurState = "idle";
@@ -263,17 +286,13 @@ function setup() {
   imgCloud1 = loadImage("Assets/Cloud1.png");
   imgCloud2 = loadImage("Assets/Cloud2.png");
 
-  // ── Start the intro video right away ─────────────────────────
   _startIntro();
 }
 
 function draw() {
-  // While the intro is playing the video element sits on top of
-  // the canvas (z-index 10). We just clear to black so nothing
-  // bleeds through underneath.
   if (currentScreen === "intro") {
-    background(0);
-    return; // skip all game drawing until the video ends
+    background(135, 195, 255);
+    return;
   }
 
   _updateBlur();
@@ -284,6 +303,13 @@ function draw() {
       break;
     case "win":
       if (bgMusic.isPlaying()) bgMusic.pause();
+      // Award the star exactly once per win screen visit
+      if (!_starAwardedThisWin) {
+        _totalStars++;
+        _starAwardedThisWin = true;
+        _starAnimTimer = 0;
+      }
+      _starAnimTimer++;
       drawWinScreen();
       break;
     case "lose":
@@ -323,17 +349,95 @@ function drawWinScreen() {
   textAlign(CENTER, CENTER);
   textSize(48);
   textFont("monospace");
-  text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 60 + bounce);
+  text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 80 + bounce);
+
   textSize(18);
   fill(180, 230, 255);
-  text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 + 10);
+  text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 - 20);
+
+  // ── Star reward ───────────────────────────────────────────────
+  _drawStarReward(ox);
+
   let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(14);
     fill(140, 190, 240);
-    text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 70);
+    text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 120);
   }
   textAlign(LEFT, BASELINE);
+}
+
+// ── Star reward rendering ─────────────────────────────────────
+function _drawStarReward(ox) {
+  let centerX = ox + PLAY_WIDTH / 2;
+  let centerY = height / 2 + 45;
+
+  // Label
+  textFont("monospace");
+  textSize(13);
+  textAlign(CENTER, CENTER);
+  fill(180, 230, 255, 200);
+  noStroke();
+  text("LEVEL 1 STAR COLLECTED", centerX, centerY - 28);
+
+  let animT = constrain(_starAnimTimer / STAR_ANIM_DURATION, 0, 1);
+
+  let starSize = 28;
+  let starGap = 38;
+  let totalW = (_totalStars - 1) * starGap;
+  let startX = centerX - totalW / 2;
+
+  for (let i = 0; i < _totalStars; i++) {
+    let sx = startX + i * starGap;
+    let sy = centerY + 8;
+    let isNewest = i === _totalStars - 1;
+
+    // easeOutBack pop-in for the newest star; clamp so scale() never goes <= 0
+    let s = isNewest ? max(0.01, _easeOutBack(animT)) : 1.0;
+
+    push();
+    translate(sx, sy);
+    scale(s);
+
+    // Fading glow behind the newest star while the animation plays
+    if (isNewest && animT < 1.0) {
+      let glowA = round(map(animT, 0, 1, 200, 0));
+      noStroke();
+      fill(255, 230, 80, glowA);
+      ellipse(0, 0, starSize * 2.2, starSize * 2.2);
+    }
+
+    // Star body
+    noStroke();
+    fill(255, 218, 50);
+    _drawStarShape(0, 0, starSize * 0.42, starSize * 0.9, 5);
+
+    // Shine highlight
+    fill(255, 255, 200, 160);
+    _drawStarShape(-2, -3, starSize * 0.18, starSize * 0.38, 5);
+
+    pop();
+  }
+}
+
+// Draws a 5-pointed star centered at (cx, cy)
+function _drawStarShape(cx, cy, r1, r2, pts) {
+  beginShape();
+  for (let i = 0; i < pts * 2; i++) {
+    let angle = (PI / pts) * i - PI / 2;
+    let r = i % 2 === 0 ? r2 : r1;
+    vertex(cx + cos(angle) * r, cy + sin(angle) * r);
+  }
+  endShape(CLOSE);
+}
+
+// easeOutBack: slight overshoot then settle — satisfying pop feel
+// max(0.001) prevents p5 scale() from receiving 0 or negative values
+function _easeOutBack(t) {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+  let v = 1 + c3 * pow(t - 1, 3) + c1 * pow(t - 1, 2);
+  return max(0.001, v);
 }
 
 // ── Lose screen ───────────────────────────────────────────────
@@ -387,7 +491,6 @@ function drawWinStar(x, y, r1, r2, pts) {
 }
 
 function keyPressed() {
-  // Block ALL input while the intro screen / "click to start" overlay is active.
   if (currentScreen === "intro") return;
 
   if (currentScreen === "game") {
@@ -397,6 +500,8 @@ function keyPressed() {
     (currentScreen === "win" || currentScreen === "lose") &&
     (key === "r" || key === "R")
   ) {
+    // Reset the per-win guard so the next completion awards a new star
+    _starAwardedThisWin = false;
     currentScreen = "game";
     initGame();
     _initBlur();
@@ -405,8 +510,6 @@ function keyPressed() {
 }
 
 function keyReleased() {
-  // Also block key-release events during intro so no "held key" state leaks
-  // into the game when the screen transitions.
   if (currentScreen === "intro") return;
 
   if (currentScreen === "game") {

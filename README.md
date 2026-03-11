@@ -58,6 +58,7 @@ Low Energy: https://pixabay.com/sound-effects/film-special-effects-factory-alarm
 Falling: https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
 Fail: https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
 Winning: https://pixabay.com/sound-effects/film-special-effects-winning-82808/
+Speaking: https://pixabay.com/sound-effects/film-special-effects-little-robot-sound-84657/
 
 ---
 
