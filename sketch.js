@@ -28,6 +28,8 @@ let imgCloud2;
 let bgMusic;
 let jumpSound;
 let landingSound;
+let lowEnergySound;
+let fallingSound;
 
 function preload() {
   // Only JSON here — p5 waits for this before starting
@@ -35,6 +37,8 @@ function preload() {
   bgMusic = loadSound("Assets/Background1.mp3");
   jumpSound = loadSound("Assets/Jump.mp3");
   landingSound = loadSound("Assets/Landing.mp3");
+  lowEnergySound = loadSound("Assets/LowEnergy.mp3");
+  fallingSound = loadSound("Assets/Falling.mp3");
 }
 
 function _initBlur() {
@@ -128,6 +132,8 @@ function setup() {
   // Music starts on the first keypress instead (see keyPressed below).
   jumpSound.setVolume(0.6);
   landingSound.setVolume(0.5);
+  lowEnergySound.setVolume(0.6);
+  fallingSound.setVolume(0.5);
 
   // Images loaded here — a missing file won't block the game from starting
   imgHouse = loadImage("Assets/house.png");

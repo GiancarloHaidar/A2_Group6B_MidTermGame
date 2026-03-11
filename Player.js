@@ -23,6 +23,9 @@ class Player {
     this._wobblePhase = 0;
     this._prevHorizInput = false;
     this._wasOnGround = false;
+    this._lowEnergyPlayed = false;
+    this._fallTimer = 0;
+    this._fallSoundPlayed = false;
   }
 
   energySpeedMultiplier() {
@@ -49,6 +52,7 @@ class Player {
     let cap = ENERGY_MAX * ENERGY_CHECKPOINT_CAP;
     this.energy = min(this.energy + add, cap);
     if (this.energy > 0) this.isExhausted = false;
+    if (this.energy > ENERGY_LOW_THRESHOLD) this._lowEnergyPlayed = false;
   }
 
   update(platforms) {
@@ -64,6 +68,15 @@ class Player {
       if (this.energy <= 0) {
         this.energy = 0;
         this.isExhausted = true;
+      }
+      if (this.energy <= ENERGY_LOW_THRESHOLD && !this._lowEnergyPlayed) {
+        if (
+          typeof lowEnergySound !== "undefined" &&
+          lowEnergySound.isLoaded()
+        ) {
+          lowEnergySound.play();
+        }
+        this._lowEnergyPlayed = true;
       }
     }
 
@@ -135,6 +148,19 @@ class Player {
       }
     }
     this._wasOnGround = this.onGround;
+
+    if (!this.onGround && this.vy > 0) {
+      this._fallTimer++;
+      if (this._fallTimer > 20 && !this._fallSoundPlayed) {
+        if (typeof fallingSound !== "undefined" && fallingSound.isLoaded()) {
+          fallingSound.play();
+        }
+        this._fallSoundPlayed = true;
+      }
+    } else {
+      this._fallTimer = 0;
+      this._fallSoundPlayed = false;
+    }
   }
 
   _applyGroundedSway() {
