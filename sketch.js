@@ -96,14 +96,22 @@ function _playIntroVideo() {
 }
 
 function _onIntroEnded() {
-  // Hide and clean up the video element
+  // Video has finished — pause on the last frame (already there, just be explicit)
+  if (_introVideo) _introVideo.pause();
+
+  // Show the "CLICK TO CONTINUE" button
+  const btn = document.getElementById("continueBtn");
+  btn.style.display = "flex";
+  btn.addEventListener("click", _onContinueClicked, { once: true });
+}
+
+function _onContinueClicked() {
+  // Hide the button and the frozen video, then start the game
+  document.getElementById("continueBtn").style.display = "none";
   if (_introVideo) {
-    _introVideo.pause();
     _introVideo.style.display = "none";
     _introVideo = null;
   }
-
-  // Transition to the game
   currentScreen = "game";
 }
 
@@ -334,11 +342,9 @@ function drawWinStar(x, y, r1, r2, pts) {
 }
 
 function keyPressed() {
-  // Any key skips the intro and jumps straight to the game
-  if (currentScreen === "intro") {
-    _onIntroEnded();
-    return;
-  }
+  // Block ALL input while the intro screen / "click to start" overlay is active.
+  // Nothing should reach the game logic until the player has clicked through.
+  if (currentScreen === "intro") return;
 
   if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 
@@ -357,6 +363,10 @@ function keyPressed() {
 }
 
 function keyReleased() {
+  // Also block key-release events during intro so no "held key" state leaks
+  // into the game when the screen transitions.
+  if (currentScreen === "intro") return;
+
   if (currentScreen === "game") {
     gameKeyReleased(keyCode);
   }

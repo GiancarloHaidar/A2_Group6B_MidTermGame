@@ -48,12 +48,38 @@
         animation: blink 1.2s step-start infinite;
       }
       @keyframes blink { 50% { opacity: 0; } }
+
+      /* Click-to-continue button — shown when the intro video finishes */
+      #continueBtn {
+        display: none;               /* hidden until video ends           */
+        position: fixed;
+        inset: 0;
+        z-index: 15;                 /* above video (10) below overlay (20) */
+        align-items: center;
+        justify-content: center;
+      }
+      #continueBtn span {
+        color: #fff;
+        font-family: monospace;
+        font-size: 20px;
+        letter-spacing: 0.12em;
+        padding: 14px 32px;
+        border: 2px solid rgba(255,255,255,0.6);
+        background: rgba(0,0,0,0.45);
+        cursor: pointer;
+        animation: blink 1.2s step-start infinite;
+      }
     </style>
     <script src="libraries/p5.min.js"></script>
     <script src="libraries/p5.sound.min.js"></script>
   </head>
   <body>
     <video id="introVideo" src="Assets/intro.mp4"></video>
+
+    <!-- Shown when the intro video finishes — click to enter gameplay -->
+    <div id="continueBtn">
+      <span>CLICK TO CONTINUE</span>
+    </div>
 
     <!-- Click-to-start overlay. Dismissed on first click, which also unlocks
          audio so the intro video can play with sound.
