@@ -66,10 +66,16 @@ Speaking: https://pixabay.com/sound-effects/film-special-effects-little-robot-so
 
 ## In-Programmed Citations
 
-Calgary MS Program - Allied Health. 2023. _What is multiple sclerosis (MS) fatigue?_ MyHealth.Alberta.ca. Retrieved March 2, 2026 from https://myhealth.alberta.ca/Alberta/Pages/multiple-sclerosis-fatigue.aspx
-
-Mayo Clinic Staff. 2024. _Multiple sclerosis_. Mayo Clinic. Retrieved March 2, 2026 from https://www.mayoclinic.org/diseases-conditions/multiple-sclerosis/symptoms-causes/syc-20350269
-
-MS Society. 2023. _MS eye and vision problems_. MS Society. Retrieved March 2, 2026 from https://www.mssociety.org.uk/about-ms/signs-and-symptoms/eyes-and-sight
-
-National MS Society. n.d. _Vertigo and Dizziness with MS_. National Multiple Sclerosis Society. Retrieved March 2, 2026 from https://www.nationalmssociety.org/understanding-ms/what-is-ms/ms-symptoms/vertigo-dizziness
+References
+[1] Calgary MS Program – Allied Health. 2023. What is multiple sclerosis (MS) fatigue? MyHealth.Alberta.ca. https://myhealth.alberta.ca/Alberta/Pages/multiple-sclerosis-fatigue.aspx
+[2] Mayo Clinic Staff. 2024. Multiple sclerosis. Mayo Clinic. https://www.mayoclinic.org/diseases-conditions/multiple-sclerosis/symptoms-causes/syc-20350269
+[3] MS Society. 2023. MS eye and vision problems. MS Society. https://www.mssociety.org.uk/about-ms/signs-and-symptoms/eyes-and-sight
+[4] National Multiple Sclerosis Society. n.d. Vertigo and dizziness with MS. National Multiple Sclerosis Society. https://www.nationalmssociety.org/understanding-ms/what-is-ms/ms-symptoms/vertigo-dizziness
+[5] Pixabay. 2023. Cartoon jump (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
+[6] Pixabay. 2023. Factory alarm (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-factory-alarm-95712/
+[7] Pixabay. 2023. Little robot sound (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-little-robot-sound-84657/
+[8] Pixabay. 2023. Spin fail (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
+[9] Pixabay. 2023. Walk on grass 1 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-walk-on-grass-1-291984/
+[10] Pixabay. 2023. Whistle slide down 03 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
+[11] Pixabay. 2023. Winning (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-winning-82808/
+[12] Pixabay. 2023. Roblox Minecraft Fortnite video game music. Pixabay. https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
