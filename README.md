@@ -12,7 +12,7 @@ Assignment 2: Mid-Term Game (Group Project)
 
 # Description:
 
-challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
+Challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
 
 Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics so that players experience these effects while navigating the environment.
 
