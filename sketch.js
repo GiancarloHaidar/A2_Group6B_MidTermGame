@@ -30,6 +30,8 @@ let jumpSound;
 let landingSound;
 let lowEnergySound;
 let fallingSound;
+let failSound;
+let winSound;
 
 function preload() {
   // Only JSON here — p5 waits for this before starting
@@ -39,6 +41,8 @@ function preload() {
   landingSound = loadSound("Assets/Landing.mp3");
   lowEnergySound = loadSound("Assets/LowEnergy.mp3");
   fallingSound = loadSound("Assets/Falling.mp3");
+  failSound = loadSound("Assets/Fail.mp3");
+  winSound = loadSound("Assets/Win.mp3");
 }
 
 function _initBlur() {
@@ -134,6 +138,8 @@ function setup() {
   landingSound.setVolume(0.5);
   lowEnergySound.setVolume(0.6);
   fallingSound.setVolume(0.5);
+  failSound.setVolume(0.6);
+  winSound.setVolume(0.6);
 
   // Images loaded here — a missing file won't block the game from starting
   imgHouse = loadImage("Assets/house.png");

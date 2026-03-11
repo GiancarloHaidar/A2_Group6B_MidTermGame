@@ -180,7 +180,15 @@ function checkWin() {
     player.x + player.w > fp.x &&
     player.x < fp.x + fp.w &&
     abs(player.y + player.h - fp.y) < 4;
-  if (onTop) winTriggered = true;
+  if (onTop) {
+    winTriggered = true;
+    if (typeof winSound !== "undefined" && winSound.isLoaded()) {
+      winSound.play();
+    }
+    if (typeof bgMusic !== "undefined" && bgMusic.isPlaying()) {
+      bgMusic.pause();
+    }
+  }
 }
 
 // ── Exhaustion / lose detection ───────────────────────────────

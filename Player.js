@@ -68,6 +68,9 @@ class Player {
       if (this.energy <= 0) {
         this.energy = 0;
         this.isExhausted = true;
+        if (typeof failSound !== "undefined" && failSound.isLoaded()) {
+          failSound.play();
+        }
       }
       if (this.energy <= ENERGY_LOW_THRESHOLD && !this._lowEnergyPlayed) {
         if (
@@ -110,7 +113,12 @@ class Player {
       this.vy = JUMP_FORCE;
       this.onGround = false;
       this.energy = max(0, this.energy - ENERGY_DRAIN_JUMP);
-      if (this.energy === 0) this.isExhausted = true;
+      if (this.energy === 0) {
+        this.isExhausted = true;
+        if (typeof failSound !== "undefined" && failSound.isLoaded()) {
+          failSound.play();
+        }
+      }
       if (typeof jumpSound !== "undefined" && jumpSound.isLoaded()) {
         jumpSound.play();
       }
