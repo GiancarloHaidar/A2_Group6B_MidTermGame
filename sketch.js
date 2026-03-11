@@ -41,6 +41,7 @@ let lowEnergySound;
 let fallingSound;
 let failSound;
 let winSound;
+let speakingSound;
 
 function preload() {
   levelData = loadJSON("level1.json");
@@ -51,6 +52,7 @@ function preload() {
   fallingSound = loadSound("Assets/Falling.mp3");
   failSound = loadSound("Assets/Fail.mp3");
   winSound = loadSound("Assets/Win.mp3");
+  speakingSound = loadSound("Assets/Speaking.mp3");
 }
 
 // ── Intro video helpers ───────────────────────────────────────
@@ -163,6 +165,9 @@ function _playScene2() {
     console.warn("Scene2 play() failed — skipping to game.");
     _onScene2Ended();
   });
+
+  // Play the speaking sound effect when Scene 2 begins
+  if (speakingSound && speakingSound.isLoaded()) speakingSound.play();
 }
 
 function _onScene2Ended() {
