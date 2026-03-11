@@ -2,12 +2,11 @@ html,
 body {
   margin: 0;
   padding: 0;
-  overflow: hidden; /* prevent scrollbars from appearing during resize */
-  background: #87c3ff;
+  overflow: hidden;
+  background: #000;
 }
 
-/* Let p5.js control canvas dimensions entirely.
-   display:block removes the inline-element gap beneath the canvas. */
 canvas {
   display: block;
+  background: transparent !important;
 }

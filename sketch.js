@@ -2,12 +2,18 @@
 // sketch.js — Conductor / Router
 // ============================================================
 
-let currentScreen = "game"; // "game" | "win" | "lose"
+let currentScreen = "intro"; // "intro" | "game" | "win" | "lose"  ← ADDED "intro"
 
 let player;
 let platforms;
 let cam;
 let levelData;
+
+// ── Intro video ───────────────────────────────────────────────
+// We grab the <video> element already declared in index.html.
+// Using the native DOM element is the simplest approach — no
+// p5 createVideo() needed, no extra preload step.
+let _introVideo = null;
 
 // ── World graphics buffer ─────────────────────────────────────
 let _worldBuffer = null;
@@ -34,7 +40,6 @@ let failSound;
 let winSound;
 
 function preload() {
-  // Only JSON here — p5 waits for this before starting
   levelData = loadJSON("level1.json");
   bgMusic = loadSound("Assets/Background1.mp3");
   jumpSound = loadSound("Assets/Jump.mp3");
@@ -44,6 +49,65 @@ function preload() {
   failSound = loadSound("Assets/Fail.mp3");
   winSound = loadSound("Assets/Win.mp3");
 }
+
+// ── Intro video helpers ───────────────────────────────────────
+
+function _startIntro() {
+  // Guard: don't start twice (the overlay script may call this too)
+  if (window._introStarted) return;
+  window._introStarted = true;
+
+  const overlay = document.getElementById("startOverlay");
+
+  // If the overlay is still visible, wait for the user's click first.
+  // That click hides the overlay AND provides the browser gesture needed
+  // for audio playback. Once clicked, we kick off the video.
+  if (overlay && overlay.style.display !== "none") {
+    overlay.addEventListener("click", _playIntroVideo, { once: true });
+  } else {
+    // Overlay already dismissed (or not present) — play immediately.
+    _playIntroVideo();
+  }
+}
+
+function _playIntroVideo() {
+  _introVideo = document.getElementById("introVideo");
+
+  _introVideo.src = "Assets/intro.mp4";
+  _introVideo.style.display = "block";
+  _introVideo.style.position = "fixed";
+  _introVideo.style.top = "0";
+  _introVideo.style.left = "0";
+  _introVideo.style.width = "100%";
+  _introVideo.style.height = "100%";
+  _introVideo.style.objectFit = "cover";
+  _introVideo.style.zIndex = "10";
+
+  // NOT muted — the user just clicked, so the browser will allow audio.
+  // If you want a silent intro, set this to true and remove the overlay.
+  _introVideo.muted = false;
+
+  _introVideo.addEventListener("ended", _onIntroEnded, { once: true });
+
+  _introVideo.play().catch(() => {
+    console.warn("Intro video play() failed — skipping to game.");
+    _onIntroEnded();
+  });
+}
+
+function _onIntroEnded() {
+  // Hide and clean up the video element
+  if (_introVideo) {
+    _introVideo.pause();
+    _introVideo.style.display = "none";
+    _introVideo = null;
+  }
+
+  // Transition to the game
+  currentScreen = "game";
+}
+
+// ── Blur helpers (unchanged) ──────────────────────────────────
 
 function _initBlur() {
   _blurState = "idle";
@@ -131,9 +195,7 @@ function setup() {
   initGame();
   _initBlur();
 
-  bgMusic.setVolume(0.4); // 0.0 (silent) to 1.0 (full)
-  // Note: bgMusic.loop() is NOT called here to avoid browser autoplay block.
-  // Music starts on the first keypress instead (see keyPressed below).
+  bgMusic.setVolume(0.4);
   jumpSound.setVolume(0.6);
   landingSound.setVolume(0.5);
   lowEnergySound.setVolume(0.6);
@@ -141,16 +203,26 @@ function setup() {
   failSound.setVolume(0.6);
   winSound.setVolume(0.6);
 
-  // Images loaded here — a missing file won't block the game from starting
   imgHouse = loadImage("Assets/house.png");
   imgTree = loadImage("Assets/tree.png");
   imgAstronaut = loadImage("Assets/astronaut.png");
   imgGround = loadImage("Assets/ground.png");
   imgCloud1 = loadImage("Assets/Cloud1.png");
   imgCloud2 = loadImage("Assets/Cloud2.png");
+
+  // ── Start the intro video right away ─────────────────────────
+  _startIntro();
 }
 
 function draw() {
+  // While the intro is playing the video element sits on top of
+  // the canvas (z-index 10). We just clear to black so nothing
+  // bleeds through underneath.
+  if (currentScreen === "intro") {
+    background(0);
+    return; // skip all game drawing until the video ends
+  }
+
   _updateBlur();
 
   switch (currentScreen) {
@@ -262,7 +334,12 @@ function drawWinStar(x, y, r1, r2, pts) {
 }
 
 function keyPressed() {
-  // Start music on first keypress (avoids browser autoplay block)
+  // Any key skips the intro and jumps straight to the game
+  if (currentScreen === "intro") {
+    _onIntroEnded();
+    return;
+  }
+
   if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 
   if (currentScreen === "game") {
@@ -275,7 +352,7 @@ function keyPressed() {
     currentScreen = "game";
     initGame();
     _initBlur();
-    bgMusic.loop(); // resume music on restart
+    bgMusic.loop();
   }
 }
 
