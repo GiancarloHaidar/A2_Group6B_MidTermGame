@@ -83,9 +83,8 @@ function _playIntroVideo() {
   _introVideo.style.objectFit = "cover";
   _introVideo.style.zIndex = "10";
 
-  // NOT muted — the user just clicked, so the browser will allow audio.
-  // If you want a silent intro, set this to true and remove the overlay.
-  _introVideo.muted = false;
+  // Mute the video — bgMusic handles all audio
+  _introVideo.muted = true;
 
   _introVideo.addEventListener("ended", _onIntroEnded, { once: true });
 
@@ -93,6 +92,10 @@ function _playIntroVideo() {
     console.warn("Intro video play() failed — skipping to game.");
     _onIntroEnded();
   });
+
+  // Start the background music now so it plays under the intro
+  // and continues uninterrupted into gameplay
+  if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 }
 
 function _onIntroEnded() {
@@ -343,10 +346,7 @@ function drawWinStar(x, y, r1, r2, pts) {
 
 function keyPressed() {
   // Block ALL input while the intro screen / "click to start" overlay is active.
-  // Nothing should reach the game logic until the player has clicked through.
   if (currentScreen === "intro") return;
-
-  if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 
   if (currentScreen === "game") {
     gameKeyPressed(keyCode);

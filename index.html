@@ -47,27 +47,51 @@
         letter-spacing: 0.1em;
         animation: blink 1.2s step-start infinite;
       }
-      @keyframes blink { 50% { opacity: 0; } }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
 
-      /* Click-to-continue button — shown when the intro video finishes */
+      /* ── CLICK TO CONTINUE button ────────────────────────────────
+         Pixel-art style matching the game's yellow/black aesthetic.
+         No blinking — solid and readable over the frozen video frame. */
       #continueBtn {
-        display: none;               /* hidden until video ends           */
+        display: none;
         position: fixed;
         inset: 0;
-        z-index: 15;                 /* above video (10) below overlay (20) */
+        z-index: 15;
         align-items: center;
         justify-content: center;
       }
       #continueBtn span {
-        color: #fff;
         font-family: monospace;
-        font-size: 20px;
-        letter-spacing: 0.12em;
-        padding: 14px 32px;
-        border: 2px solid rgba(255,255,255,0.6);
-        background: rgba(0,0,0,0.45);
+        font-size: 18px;
+        font-weight: bold;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
         cursor: pointer;
-        animation: blink 1.2s step-start infinite;
+
+        /* Yellow background by default */
+        background: #ffe800;
+        color: #1a1a2e; /* dark navy text */
+        text-shadow: none;
+        border: 3px solid #ffe800;
+        border-radius: 8px;
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      #continueBtn span:hover {
+        background: rgba(0, 0, 0, 0.72);
+        color: #ffe800;
+        border-color: #ffe800;
+        text-shadow:
+          2px 0px 0 #000,
+          -2px 0px 0 #000,
+          0px 2px 0 #000,
+          0px -2px 0 #000;
       }
     </style>
     <script src="libraries/p5.min.js"></script>
@@ -88,15 +112,19 @@
       <span>CLICK TO START</span>
     </div>
     <script>
-      document.getElementById("startOverlay").addEventListener("click", function () {
-        this.style.display = "none"; // hide overlay
-        // _startIntro() is called in p5's setup(), which runs after this click.
-        // If p5 setup has already run (rare but possible), call it now.
-        if (typeof _startIntro === "function" && !window._introStarted) {
-          window._introStarted = true;
-          _startIntro();
-        }
-      }, { once: true });
+      document.getElementById("startOverlay").addEventListener(
+        "click",
+        function () {
+          this.style.display = "none"; // hide overlay
+          // _startIntro() is called in p5's setup(), which runs after this click.
+          // If p5 setup has already run (rare but possible), call it now.
+          if (typeof _startIntro === "function" && !window._introStarted) {
+            window._introStarted = true;
+            _startIntro();
+          }
+        },
+        { once: true },
+      );
     </script>
     <!-- Load order matters: constants → classes → visuals → screens → conductor -->
     <script src="constants.js"></script>
