@@ -39,7 +39,25 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 # Assets
 
-need to add music and talk about the assets jostlynn and jayna made
+Music Assets
+
+Images:
+Splash Screen - Created by Jostlynn on Illustrator
+Astronaut - made by Jostlynn on Illustrator
+House - Made using GenAi https://chatgpt.com/share/69a79e0f-a614-8007-b7d9-43925b515be9
+
+Video:
+Intro Video - made by Jayna on Capcut
+Speech Video - made by Jayna on Capcut
+
+Sounds:
+Music: https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
+Jump: https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
+Grass: https://pixabay.com/sound-effects/film-special-effects-walk-on-grass-1-291984/
+Low Energy: https://pixabay.com/sound-effects/film-special-effects-factory-alarm-95712/
+Falling: https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
+Fail: https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
+Winning: https://pixabay.com/sound-effects/film-special-effects-winning-82808/
 
 ---
 

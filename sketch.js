@@ -2,24 +2,17 @@
 // sketch.js — Conductor / Router
 // ============================================================
 
-let currentScreen = "intro"; // "intro" | "game" | "win" | "lose"
+let currentScreen = "intro"; // "intro" | "game" | "win" | "lose"  ← ADDED "intro"
 
 let player;
 let platforms;
 let cam;
 let levelData;
 
-// ── Star progression ──────────────────────────────────────────
-// One star is awarded each time the player completes a level.
-// Stars persist for the entire browser session (reset on page reload).
-let _totalStars = 0; // cumulative stars earned this session
-let _starAwardedThisWin = false; // guard: award only once per win screen visit
-
-// Star pop-in animation state
-let _starAnimTimer = 0; // counts up from 0 when win screen opens
-const STAR_ANIM_DURATION = 40; // frames for the pop-in scale animation
-
 // ── Intro video ───────────────────────────────────────────────
+// We grab the <video> element already declared in index.html.
+// Using the native DOM element is the simplest approach — no
+// p5 createVideo() needed, no extra preload step.
 let _introVideo = null;
 
 // ── World graphics buffer ─────────────────────────────────────
@@ -60,14 +53,19 @@ function preload() {
 // ── Intro video helpers ───────────────────────────────────────
 
 function _startIntro() {
+  // Guard: don't start twice (the overlay script may call this too)
   if (window._introStarted) return;
   window._introStarted = true;
 
   const overlay = document.getElementById("startOverlay");
 
+  // If the overlay is still visible, wait for the user's click first.
+  // That click hides the overlay AND provides the browser gesture needed
+  // for audio playback. Once clicked, we kick off the video.
   if (overlay && overlay.style.display !== "none") {
     overlay.addEventListener("click", _playIntroVideo, { once: true });
   } else {
+    // Overlay already dismissed (or not present) — play immediately.
     _playIntroVideo();
   }
 }
@@ -85,6 +83,7 @@ function _playIntroVideo() {
   _introVideo.style.objectFit = "cover";
   _introVideo.style.zIndex = "10";
 
+  // Mute the video — bgMusic handles all audio
   _introVideo.muted = true;
 
   _introVideo.addEventListener("ended", _onIntroEnded, { once: true });
@@ -94,12 +93,16 @@ function _playIntroVideo() {
     _onIntroEnded();
   });
 
+  // Start the background music now so it plays under the intro
+  // and continues uninterrupted into gameplay
   if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 }
 
 function _onIntroEnded() {
+  // Video has finished — pause on the last frame
   if (_introVideo) _introVideo.pause();
 
+  // Show the "CLICK TO CONTINUE" button
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
   btn.addEventListener("click", _onContinueClicked, { once: true });
@@ -107,14 +110,57 @@ function _onIntroEnded() {
 
 function _onContinueClicked() {
   document.getElementById("continueBtn").style.display = "none";
+
+  // Hide the finished intro video
   if (_introVideo) {
     _introVideo.style.display = "none";
     _introVideo = null;
   }
+
+  // Play Scene 2 instead of going straight to the game
+  _playScene2();
+}
+
+// ── Scene 2 video ─────────────────────────────────────────────
+
+function _playScene2() {
+  // Reuse the same <video> element
+  _introVideo = document.getElementById("introVideo");
+
+  _introVideo.src = "Assets/Scene2.mp4";
+  _introVideo.style.display = "block";
+  _introVideo.muted = true; // bgMusic already playing
+
+  // Listen for Scene 2 ending — freeze and show the button again
+  _introVideo.addEventListener("ended", _onScene2Ended, { once: true });
+
+  _introVideo.play().catch(() => {
+    console.warn("Scene2 play() failed — skipping to game.");
+    _onScene2Ended();
+  });
+}
+
+function _onScene2Ended() {
+  // Freeze on last frame
+  if (_introVideo) _introVideo.pause();
+
+  // Show the continue button one more time — this click goes to the game
+  const btn = document.getElementById("continueBtn");
+  btn.style.display = "flex";
+  btn.addEventListener("click", _onScene2Continued, { once: true });
+}
+
+function _onScene2Continued() {
+  document.getElementById("continueBtn").style.display = "none";
+  if (_introVideo) {
+    _introVideo.style.display = "none";
+    _introVideo = null;
+  }
+  // Now enter the game
   currentScreen = "game";
 }
 
-// ── Blur helpers ──────────────────────────────────────────────
+// ── Blur helpers (unchanged) ──────────────────────────────────
 
 function _initBlur() {
   _blurState = "idle";
@@ -217,13 +263,17 @@ function setup() {
   imgCloud1 = loadImage("Assets/Cloud1.png");
   imgCloud2 = loadImage("Assets/Cloud2.png");
 
+  // ── Start the intro video right away ─────────────────────────
   _startIntro();
 }
 
 function draw() {
+  // While the intro is playing the video element sits on top of
+  // the canvas (z-index 10). We just clear to black so nothing
+  // bleeds through underneath.
   if (currentScreen === "intro") {
     background(0);
-    return;
+    return; // skip all game drawing until the video ends
   }
 
   _updateBlur();
@@ -234,13 +284,6 @@ function draw() {
       break;
     case "win":
       if (bgMusic.isPlaying()) bgMusic.pause();
-      // Award the star exactly once when entering the win screen
-      if (!_starAwardedThisWin) {
-        _totalStars++;
-        _starAwardedThisWin = true;
-        _starAnimTimer = 0;
-      }
-      _starAnimTimer++;
       drawWinScreen();
       break;
     case "lose":
@@ -280,101 +323,17 @@ function drawWinScreen() {
   textAlign(CENTER, CENTER);
   textSize(48);
   textFont("monospace");
-  text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 80 + bounce);
-
+  text("Congrats!", ox + PLAY_WIDTH / 2, height / 2 - 60 + bounce);
   textSize(18);
   fill(180, 230, 255);
-  text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 - 20);
-
-  // ── Star award display ────────────────────────────────────────
-  _drawStarReward(ox);
-
+  text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 + 10);
   let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(14);
     fill(140, 190, 240);
-    text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 120);
+    text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 70);
   }
   textAlign(LEFT, BASELINE);
-}
-
-// ── Star reward rendering ─────────────────────────────────────
-// Draws the "Level Complete" star tally centered on the win screen.
-// A pop-in animation plays when the win screen first opens.
-function _drawStarReward(ox) {
-  let centerX = ox + PLAY_WIDTH / 2;
-  let centerY = height / 2 + 45;
-
-  // Label
-  textFont("monospace");
-  textSize(13);
-  textAlign(CENTER, CENTER);
-  fill(180, 230, 255, 200);
-  noStroke();
-  text("1/3 STARS COLLECTED", centerX, centerY - 28);
-
-  // Compute the pop-in scale for the newest star
-  // easeOutBack: overshoots slightly then settles
-  let animT = constrain(_starAnimTimer / STAR_ANIM_DURATION, 0, 1);
-
-  let starSize = 28;
-  let starGap = 38;
-  let totalW = (_totalStars - 1) * starGap;
-  let startX = centerX - totalW / 2;
-
-  for (let i = 0; i < _totalStars; i++) {
-    let sx = startX + i * starGap;
-    let sy = centerY + 8;
-
-    let isNewest = i === _totalStars - 1;
-    // During the first few frames, easeOutBack can be near-zero.
-    // Clamp to a small minimum so scale() never gets 0 or negative.
-    let s = isNewest ? max(0.01, _easeOutBack(animT)) : 1.0;
-
-    push();
-    translate(sx, sy);
-    scale(s);
-
-    // Glow for the newest star while animating
-    if (isNewest && animT < 1.0) {
-      let glowA = round(map(animT, 0, 1, 200, 0));
-      noStroke();
-      fill(255, 230, 80, glowA);
-      ellipse(0, 0, starSize * 2.2, starSize * 2.2);
-    }
-
-    // Star body
-    noStroke();
-    fill(255, 218, 50);
-    _drawStarShape(0, 0, starSize * 0.42, starSize * 0.9, 5);
-
-    // Shine highlight
-    fill(255, 255, 200, 160);
-    _drawStarShape(-2, -3, starSize * 0.18, starSize * 0.38, 5);
-
-    pop();
-  }
-}
-
-// Draws a 5-pointed star centered at (cx, cy)
-// r1 = inner radius, r2 = outer radius
-function _drawStarShape(cx, cy, r1, r2, pts) {
-  beginShape();
-  for (let i = 0; i < pts * 2; i++) {
-    let angle = (PI / pts) * i - PI / 2;
-    let r = i % 2 === 0 ? r2 : r1;
-    vertex(cx + cos(angle) * r, cy + sin(angle) * r);
-  }
-  endShape(CLOSE);
-}
-
-// easeOutBack: overshoots past 1 then settles — gives a satisfying pop
-// max(0.001, ...) prevents p5's scale() from receiving 0 or negative values
-function _easeOutBack(t) {
-  const c1 = 1.70158;
-  const c3 = c1 + 1;
-  let v = 1 + c3 * pow(t - 1, 3) + c1 * pow(t - 1, 2);
-  return max(0.001, v);
 }
 
 // ── Lose screen ───────────────────────────────────────────────
@@ -428,6 +387,7 @@ function drawWinStar(x, y, r1, r2, pts) {
 }
 
 function keyPressed() {
+  // Block ALL input while the intro screen / "click to start" overlay is active.
   if (currentScreen === "intro") return;
 
   if (currentScreen === "game") {
@@ -437,8 +397,6 @@ function keyPressed() {
     (currentScreen === "win" || currentScreen === "lose") &&
     (key === "r" || key === "R")
   ) {
-    // Reset the per-win guard so the next completion awards a star
-    _starAwardedThisWin = false;
     currentScreen = "game";
     initGame();
     _initBlur();
@@ -447,6 +405,8 @@ function keyPressed() {
 }
 
 function keyReleased() {
+  // Also block key-release events during intro so no "held key" state leaks
+  // into the game when the screen transitions.
   if (currentScreen === "intro") return;
 
   if (currentScreen === "game") {
