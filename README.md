@@ -14,7 +14,7 @@ Assignment 2: Mid-Term Game (Group Project)
 
 Challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
 
-Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics so players experience these effects as they navigate the environment.
+Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics, so players experience these effects as they navigate the environment.
 
 The game consists of a platform-based level where players must jump between platforms and navigate obstacles to reach the end. Mechanics such as unstable movement, altered gravity, or visual distortion are used to represent how MS symptoms can affect movement and perception.
 
@@ -34,7 +34,7 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 After the in-class playtesting session, our group observed how players interacted with the level and reviewed classmates' feedback. Based on these observations, we made several adjustments to improve clarity, progression of difficulty, and gameplay flow.
 
-Change 1: Players reported that the first level felt too long and overwhelming for an introduction to the game mechanics. To improve onboarding, we reduced the number of levels and the number of platforms. This allows players to first learn the basic platforming mechanics before encountering more complex challenges in later levels.
+Change 1: Players reported that the first level felt too long and overwhelming for an introduction to the game mechanics. To improve onboarding, we reduced the number of levels and platforms. This allows players to first learn the basic platforming mechanics before encountering more complex challenges in later levels.
 
 Change 2: Originally, several mechanics were introduced too early in the gameplay experience. Based on feedback, we decided to restructure the progression so that mechanics appear gradually across levels:
 
@@ -44,7 +44,7 @@ Change 2: Originally, several mechanics were introduced too early in the gamepla
 
 This progression helps players understand the controls before experiencing more challenging mechanics.
 
-Change 3: During playtesting, some players struggled with the spacing and timing of jumps between platforms. We adjusted the distance between platforms and repositioned several jumps to increase the difficulty more naturally as the level progresses.
+Change 3: During playtesting, some players struggled with the spacing and timing of jumps between platforms. We adjusted the platform spacing and repositioned several jumps to increase the difficulty more naturally as the level progresses.
 
 ## Post-Showcase:
 
@@ -91,6 +91,7 @@ Speaking: https://pixabay.com/sound-effects/film-special-effects-little-robot-so
 ## In-Programmed Citations
 
 References
+
 [1] Calgary MS Program – Allied Health. 2023. What is multiple sclerosis (MS) fatigue? MyHealth.Alberta.ca. https://myhealth.alberta.ca/Alberta/Pages/multiple-sclerosis-fatigue.aspx
 
 [2] Mayo Clinic Staff. 2024. Multiple sclerosis. Mayo Clinic. https://www.mayoclinic.org/diseases-conditions/multiple-sclerosis/symptoms-causes/syc-20350269
@@ -106,7 +107,11 @@ References
 [7] Pixabay. 2023. Little robot sound (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-little-robot-sound-84657/
 
 [8] Pixabay. 2023. Spin fail (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
+
 [9] Pixabay. 2023. Walk on grass 1 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-walk-on-grass-1-291984/
+
 [10] Pixabay. 2023. Whistle slide down 03 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
+
 [11] Pixabay. 2023. Winning (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-winning-82808/
+
 [12] Pixabay. 2023. Roblox Minecraft Fortnite video game music. Pixabay. https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
