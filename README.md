@@ -48,8 +48,11 @@ Change 3: During playtesting, some players struggled with the spacing and timing
 
 ## Post-Showcase:
 
-- Following our showcase,
-- As for our last planned improvement,
+Following our showcase, our group received feedback from instructors and teaching instructors on topics ranging from visual progression representation to the gradual introduction of game mechanics. As for our planned improvements, we have based the future changes on these planned game mechanics.
+
+Change 1: Professor Karen and Han did not initially notice the level progress bar because it blended into the environment, so they suggested modifying the tone to make it more visible and better reflect the game's visual progression.
+
+Change 2: The final piece of feedback came from revisiting the level at the end of the session, where Professor Karen and Han suggested a gradual introduction of colour-blind platforms for gameplay friendliness rather than strict representations of MS symptoms.
 
 ---
 
