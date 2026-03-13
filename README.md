@@ -12,11 +12,11 @@ Assignment 2: Mid-Term Game (Group Project)
 
 # Description:
 
-challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
+Challenges associated with Multiple Sclerosis (MS) through gameplay mechanics rather than direct instruction.
 
-Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics so that players experience these effects while navigating the environment.
+Multiple Sclerosis is a neurological condition that affects communication between the brain and body, often causing symptoms such as fatigue, balance issues, vision problems, and coordination difficulties [1]. Our game translates aspects of these symptoms into interactive mechanics, so players experience these effects as they navigate the environment.
 
-The game consists of a platform-based level where players must jump between platforms and navigate obstacles to reach the end of the level. Mechanics such as unstable movement, altered gravity, or visual distortion are used to represent how MS symptoms can affect movement and perception.
+The game consists of a platform-based level where players must jump between platforms and navigate obstacles to reach the end. Mechanics such as unstable movement, altered gravity, or visual distortion are used to represent how MS symptoms can affect movement and perception.
 
 The goal of the project is to create an engaging platformer that encourages empathy and understanding while still functioning as a fun gameplay experience.
 
@@ -24,7 +24,7 @@ The goal of the project is to create an engaging platformer that encourages empa
 
 # Setup and Interaction Instructions
 
-To play the game, a single player needs a device and a keyboard to navigate the map from ground level to the summit platform. Users can control their character using 'W', 'A', 'S', 'D', or the arrow keys '↑', '↓', '←', '→' to move up, down, left, or right, and jump onto the next platform with the spacebar. Player's level progress is tracked with a progress bar, while they must manage another bar that displays their energy, which depletes with every movement as they summit the course. The game is not about completing the course the fastest, but instead about reaching the checkpoint conserving enough energy. While energy depletes, off balance is increased, and movement is slowed, making the completion of the level more difficult if energy is lost.
+To play the game, a single player needs a device and a keyboard to navigate the map from ground level to the summit platform. Users can control their character using 'W', 'A', 'S', 'D', or the arrow keys '↑', '↓', '←', '→' to move up, down, left, or right, and jump onto the next platform with the spacebar. Player's level progress is tracked with a progress bar, while they must manage another bar that displays their energy, which depletes with every movement as they summit the course. The game is not about completing the course as fast as possible, but about reaching the checkpoint while conserving enough energy. As energy depletes, off-balance increases and movement slows, making the level more difficult to complete if energy is lost.
 
 ---
 
@@ -32,9 +32,9 @@ To play the game, a single player needs a device and a keyboard to navigate the 
 
 ## Post-Playtest:
 
-After the in-class playtesting session, our group observed how players interacted with the level and reviewed feedback from classmates. Based on these observations, we made several adjustments to improve clarity, difficulty progression, and gameplay flow.
+After the in-class playtesting session, our group observed how players interacted with the level and reviewed classmates' feedback. Based on these observations, we made several adjustments to improve clarity, progression of difficulty, and gameplay flow.
 
-Change 1: Players reported that the first level felt too long and overwhelming for an introduction to the game mechanics. To improve onboarding, we shortened the level and reduced the number of platforms. This allows players to first learn the basic platforming mechanics before encountering more complex challenges in later levels.
+Change 1: Players reported that the first level felt too long and overwhelming for an introduction to the game mechanics. To improve onboarding, we reduced the number of levels and platforms. This allows players to first learn the basic platforming mechanics before encountering more complex challenges in later levels.
 
 Change 2: Originally, several mechanics were introduced too early in the gameplay experience. Based on feedback, we decided to restructure the progression so that mechanics appear gradually across levels:
 
@@ -44,7 +44,7 @@ Change 2: Originally, several mechanics were introduced too early in the gamepla
 
 This progression helps players understand the controls before experiencing more challenging mechanics.
 
-Change 3: During playtesting, some players struggled with the spacing and timing of jumps between platforms. We adjusted the distance between platforms and repositioned several jumps so that the difficulty increases more naturally as the level progresses.
+Change 3: During playtesting, some players struggled with the spacing and timing of jumps between platforms. We adjusted the platform spacing and repositioned several jumps to increase the difficulty more naturally as the level progresses.
 
 ## Post-Showcase:
 
@@ -55,7 +55,7 @@ Change 3: During playtesting, some players struggled with the spacing and timing
 
 # Assets
 
-All of the assets that are used in this project are either original or sourced from free-use resources.
+All assets used in this project are either original or sourced from free-use resources.
 
 Music Assets
 
@@ -91,15 +91,27 @@ Speaking: https://pixabay.com/sound-effects/film-special-effects-little-robot-so
 ## In-Programmed Citations
 
 References
+
 [1] Calgary MS Program – Allied Health. 2023. What is multiple sclerosis (MS) fatigue? MyHealth.Alberta.ca. https://myhealth.alberta.ca/Alberta/Pages/multiple-sclerosis-fatigue.aspx
+
 [2] Mayo Clinic Staff. 2024. Multiple sclerosis. Mayo Clinic. https://www.mayoclinic.org/diseases-conditions/multiple-sclerosis/symptoms-causes/syc-20350269
+
 [3] MS Society. 2023. MS eye and vision problems. MS Society. https://www.mssociety.org.uk/about-ms/signs-and-symptoms/eyes-and-sight
+
 [4] National Multiple Sclerosis Society. n.d. Vertigo and dizziness with MS. National Multiple Sclerosis Society. https://www.nationalmssociety.org/understanding-ms/what-is-ms/ms-symptoms/vertigo-dizziness
+
 [5] Pixabay. 2023. Cartoon jump (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-cartoon-jump-6462/
+
 [6] Pixabay. 2023. Factory alarm (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-factory-alarm-95712/
+
 [7] Pixabay. 2023. Little robot sound (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-little-robot-sound-84657/
+
 [8] Pixabay. 2023. Spin fail (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-spin-fail-295088/
+
 [9] Pixabay. 2023. Walk on grass 1 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-walk-on-grass-1-291984/
+
 [10] Pixabay. 2023. Whistle slide down 03 (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-whistle-slide-down-03-352451/
+
 [11] Pixabay. 2023. Winning (film special effect). Pixabay. https://pixabay.com/sound-effects/film-special-effects-winning-82808/
+
 [12] Pixabay. 2023. Roblox Minecraft Fortnite video game music. Pixabay. https://pixabay.com/music/video-games-roblox-minecraft-fortnite-video-game-music-358426/
