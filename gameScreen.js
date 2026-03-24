@@ -377,7 +377,7 @@ function _drawPlatforms(g) {
     // altitudeFrac = 0 at bottom of playable zone, 1 at finish platform.
     let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
     // Map fraction → alpha: low platforms 255 (fully solid), upper ~20 (nearly invisible)
-    let platAlpha = round(lerp(255, 20, platAltFrac));
+    let platAlpha = round(lerp(255, 40, platAltFrac));
     // Flatten the colour range: all platforms draw from a dark steel-blue base.
     // The JSON colours still shift slightly but we clamp them down so the hue
     // difference is subtle — opacity does the heavy lifting, not colour.
