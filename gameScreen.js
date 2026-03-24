@@ -371,10 +371,17 @@ function _drawPlatforms(g) {
     const isZigzag = p.section === "Zigzag";
     const isNarrow = p.w < 155;
 
-    g.fill(p.color[0], p.color[1], p.color[2], 150);
+    // Opacity gradient: platforms near the ground start semi-transparent
+    // (easy, familiar terrain), growing fully opaque as the player climbs.
+    // This mirrors colour-perception fatigue — the world hardens as you tire.
+    // altitudeFrac = 0 at bottom of playable zone, 1 at finish platform.
+    let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
+    // Map fraction → alpha: low platforms ~55 (ghostly), upper ~220 (solid)
+    let platAlpha = round(lerp(55, 220, platAltFrac));
+    g.fill(p.color[0], p.color[1], p.color[2], platAlpha);
     g.rect(p.x, p.y, p.w, p.h, 3);
 
-    let hlAlpha = map(p.w, 130, 225, 12, 42);
+    let hlAlpha = map(p.w, 130, 225, 12, 42) * (platAlpha / 220);
     g.fill(255, 255, 255, constrain(hlAlpha, 12, 42));
     g.rect(p.x, p.y, p.w, 4, 3, 3, 0, 0);
 
@@ -548,38 +555,66 @@ function drawUI() {
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
   let barHA = height * 0.55;
 
-  fill(10, 20, 80, 160);
+  // Outer glow / shadow panel — wider and more opaque for visibility
+  fill(0, 0, 0, 140);
   noStroke();
-  rect(barX - 4, barTopYA - 4, 16, barHA + 8, 6);
+  rect(barX - 7, barTopYA - 6, 22, barHA + 12, 8);
 
-  fill(255, 255, 255, 30);
+  // Border ring — bright so it pops against any background colour
+  stroke(200, 230, 255, 200);
+  strokeWeight(1.5);
+  noFill();
+  rect(barX - 2, barTopYA - 2, 12, barHA + 4, 5);
+  noStroke();
+
+  // Dark track
+  fill(8, 14, 40, 230);
   noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
   let altFrac = altKm / 100;
-  let aR = round(lerp(80, 220, altFrac));
+  // Colour: warm orange at ground → bright cyan/white near summit
+  let aR = round(lerp(255, 180, altFrac));
   let aG = round(lerp(140, 240, altFrac));
-  let aB = 255;
-  fill(aR, aG, aB, 220);
+  let aB = round(lerp(40, 255, altFrac));
+
+  // Soft glow behind the fill strip
+  fill(aR, aG, aB, 40);
+  rect(barX - 1, barTopYA, 10, barHA, 4);
+
+  // Main fill
+  fill(aR, aG, aB, 240);
   let fillH = barHA * altFrac;
   if (fillH > 2) rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
 
-  stroke(180, 210, 255, 120);
+  // Top tick line
+  stroke(255, 255, 255, 180);
   strokeWeight(1);
   line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
+
+  // Progress marker dot — pulses gently
+  if (fillH > 2) {
+    let dotPulse = 0.65 + 0.35 * sin(frameCount * 0.08);
+    fill(255, 255, 255, round(200 * dotPulse));
+    noStroke();
+    ellipse(barX + 4, barTopYA + barHA - fillH, 7, 7);
+    fill(aR, aG, aB, 255);
+    ellipse(barX + 4, barTopYA + barHA - fillH, 4, 4);
+  }
 
   let kmLabel = altKm >= 99.5 ? "100 km" : floor(altKm) + " km";
   textAlign(RIGHT, BOTTOM);
   textSize(11);
   textFont("monospace");
 
-  fill(10, 20, 80, 180);
+  // Label background — dark pill
+  fill(0, 0, 0, 200);
   noStroke();
-  rect(barX - 30, barTopYA - 18, 44, 16, 3);
+  rect(barX - 32, barTopYA - 19, 46, 16, 3);
 
   fill(aR, aG, aB, 255);
-  text(kmLabel, barX + 8, barTopYA - 2);
+  text(kmLabel, barX + 8, barTopYA - 3);
 
   if (winTriggered) {
     let a = map(winAnimTimer, 0, 90, 0, 200);
