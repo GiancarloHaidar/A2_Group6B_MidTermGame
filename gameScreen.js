@@ -2,19 +2,20 @@
 // gameScreen.js
 // init, draw, and input handling for the "game" screen.
 //
-// Blur integration:
-//   drawGame() renders the world into _worldBuffer, then calls
-//   stampWorldBuffer() (defined in sketch.js) which sets
-//   drawingContext.filter = "blur(Npx)" on the MAIN canvas before
-//   calling image(), then resets it to "none" immediately after.
-//   UI is drawn after the reset, so it is never blurred.
+// Level 2 additions (all gated on currentLevel === 2):
+//   - Moving platforms (horizontal, driven by JSON fields)
+//   - Space gradient background with stars
+//   - Colour-blindness / contrast-reduction overlay
+//   - Level settings (gravityMultiplier, balanceMultiplier, etc.)
+//     read from levelData and applied each frame
+//
+// Level 1 is 100 % unchanged.
 // ============================================================
 
 // ── Input state ──────────────────────────────────────────────
 let _keys = { left: false, right: false, down: false };
 
 // ── Instructions visibility ───────────────────────────────────
-// Stays false until the player presses any movement key for the first time.
 let _playerHasMoved = false;
 
 // ── Finish / win state ───────────────────────────────────────
@@ -26,71 +27,88 @@ let winAnimTimer = 0;
 let _groundY = 0;
 let _climbPx = 1;
 
-// ── Ground scenery layout ─────────────────────────────────────
-// All positions are in level-space (same coordinate system as platforms).
-// SCENERY_GROUND_Y = top of the ground platform (y=3950 in level1.json).
-// SCENERY_SINK = how many px each sprite is buried into the ground so
-//   roots/base look planted rather than floating.
-const SCENERY_GROUND_Y = 3950;
-const SCENERY_TREE_SINK = 18; // px the tree base overlaps into the ground
-const SCENERY_HOUSE_SINK = 75; // px the house base overlaps into the ground
+// ── Level 2 runtime settings (populated in initGame) ─────────
+// These mirror the optional JSON fields in level2.json.
+// Defaults are identical to Level 1 so nothing changes if fields are absent.
+let _lvGravityMult        = 1.0;
+let _lvJumpForceMult      = 1.0;
+let _lvBalanceMult        = 1.0;
+let _lvColorBlindStrength = 0.0;  // 0 = off, 1 = fully desaturated / compressed
+let _lvContrastReduction  = 0.0;  // 0 = off, 1 = maximally flattened
 
-// Tree PNG is ~1024px tall; scale 0.12 → ~123px  (≈3× player height)
+// ── Stars (Level 2 background) ───────────────────────────────
+// Generated once in initGame so they don't re-randomise each frame.
+let _bgStars = [];
+const BG_STAR_COUNT = 120;
+
+// ── Ground scenery layout ─────────────────────────────────────
+const SCENERY_GROUND_Y   = 3950;
+const SCENERY_TREE_SINK  = 18;
+const SCENERY_HOUSE_SINK = 75;
+
 const SCENERY_TREES = [];
 
-// House PNG is ~1024px tall; scale 0.10 → ~102px  (≈2.5× player height)
 const SCENERY_HOUSE = {
   x: 30,
   scale: 0.3,
 };
 
-// ── Astronaut sprite draw offsets (tune if alignment needs adjustment) ───
-const PLAYER_DRAW_OFFSET_X = -10; // px left/right relative to hitbox
-const PLAYER_DRAW_OFFSET_Y = -12; // px up/down relative to hitbox
-const PLAYER_DRAW_W = PLAYER_W + 20; // drawn width (can be wider than hitbox)
-const PLAYER_DRAW_H = PLAYER_H + 18; // drawn height (can be taller than hitbox)
+// ── Astronaut sprite draw offsets ─────────────────────────────
+const PLAYER_DRAW_OFFSET_X = -10;
+const PLAYER_DRAW_OFFSET_Y = -12;
+const PLAYER_DRAW_W = PLAYER_W + 20;
+const PLAYER_DRAW_H = PLAYER_H + 18;
 
 // ── Cloud positions in level-space ───────────────────────────
-// Scattered through the middle altitude range (y ~800–2800).
-// x is within 0–PLAY_WIDTH. scale controls display size.
-// Alternate between Cloud1 and Cloud2 for variety.
 const CLOUD_DEFS = [
-  { type: 1, x: -20, y: 3000, scale: 0.9 }, // LEFT
-  { type: 1, x: 500, y: 2620, scale: 0.9 }, // RIGHT
-  { type: 2, x: -15, y: 2380, scale: 0.82 }, // LEFT
-  { type: 2, x: 500, y: 2150, scale: 0.85 }, // RIGHT
-  { type: 1, x: -20, y: 1870, scale: 0.76 }, // LEFT
-  { type: 1, x: 500, y: 1600, scale: 0.76 }, // RIGHT
-  { type: 2, x: -15, y: 1420, scale: 0.7 }, // LEFT
-  { type: 2, x: 615, y: 1170, scale: 0.85 }, // RIGHT
-  { type: 1, x: -20, y: 920, scale: 0.65 }, // LEFT
-  { type: 1, x: 605, y: 800, scale: 0.65 }, // RIGHT
+  { type: 1, x: -20,  y: 3000, scale: 0.90 },
+  { type: 1, x:  500, y: 2620, scale: 0.90 },
+  { type: 2, x: -15,  y: 2380, scale: 0.82 },
+  { type: 2, x:  500, y: 2150, scale: 0.85 },
+  { type: 1, x: -20,  y: 1870, scale: 0.76 },
+  { type: 1, x:  500, y: 1600, scale: 0.76 },
+  { type: 2, x: -15,  y: 1420, scale: 0.70 },
+  { type: 2, x:  615, y: 1170, scale: 0.85 },
+  { type: 1, x: -20,  y:  920, scale: 0.65 },
+  { type: 1, x:  605, y:  800, scale: 0.65 },
 ];
 
 function getWorldOffsetX() {
   return (width - PLAY_WIDTH) / 2;
 }
 
+// ── initGame ──────────────────────────────────────────────────
 function initGame() {
-  platforms = [];
+  platforms    = [];
   finishPlatform = null;
-  winTriggered = false;
-  winAnimTimer = 0;
+  winTriggered   = false;
+  winAnimTimer   = 0;
   _playerHasMoved = false;
+
+  // ── Read optional level settings from JSON ───────────────
+  _lvGravityMult        = levelData.gravityMultiplier        || 1.0;
+  _lvJumpForceMult      = levelData.jumpForceMultiplier      || 1.0;
+  _lvBalanceMult        = levelData.balanceMultiplier        || 1.0;
+  _lvColorBlindStrength = levelData.colorBlindnessStrength   || 0.0;
+  _lvContrastReduction  = levelData.platformContrastReduction || 0.0;
 
   for (let p of levelData.platforms) {
     const plat = {
-      x: p.x,
-      y: p.y,
-      w: p.w,
-      h: p.h,
-      color: p.color || [80, 80, 90],
-      zone: p.zone || "normal",
-      section: p.section || "normal",
-      laneKey: p.laneKey || "C",
-      isFinish: !!p.isFinish,
-      baseX: p.x,
+      x:           p.x,
+      y:           p.y,
+      w:           p.w,
+      h:           p.h,
+      color:       p.color || [80, 80, 90],
+      zone:        p.zone  || "normal",
+      section:     p.section || "normal",
+      laneKey:     p.laneKey || "C",
+      isFinish:    !!p.isFinish,
+      baseX:       p.x,
       wobblePhase: random(TWO_PI),
+      // Moving-platform fields (Level 2)
+      moving:      !!p.moving,
+      moveRange:   p.moveRange  || 0,
+      moveSpeed:   p.moveSpeed  || 0,
     };
     platforms.push(plat);
     if (plat.isFinish) finishPlatform = plat;
@@ -98,25 +116,41 @@ function initGame() {
 
   player = new Player(levelData.startX, levelData.startY);
 
-  cam = new Camera2D();
+  // Pass level multipliers to player so it can apply them each frame.
+  player.gravityMult   = _lvGravityMult;
+  player.jumpForceMult = _lvJumpForceMult;
+  player.balanceMult   = _lvBalanceMult;
+
+  cam   = new Camera2D();
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
   cam.y = constrain(cam.y, 0, max(0, LEVEL_HEIGHT - height));
 
   const groundPlat = levelData.platforms.find((p) => p.zone === "ground");
-  _groundY = groundPlat ? groundPlat.y : LEVEL_HEIGHT;
-  _climbPx = finishPlatform
+  _groundY  = groundPlat ? groundPlat.y : LEVEL_HEIGHT;
+  _climbPx  = finishPlatform
     ? max(1, _groundY - finishPlatform.y)
     : LEVEL_HEIGHT;
+
+  // ── Regenerate star field ────────────────────────────────
+  _bgStars = [];
+  for (let i = 0; i < BG_STAR_COUNT; i++) {
+    _bgStars.push({
+      x:         random(PLAY_WIDTH),
+      y:         random(LEVEL_HEIGHT),
+      r:         random(0.5, 2.2),
+      brightness: random(120, 255),
+      twinkleOffset: random(TWO_PI),
+    });
+  }
 }
 
 // ── Main game draw ────────────────────────────────────────────
 function drawGame() {
-  // ── Logic update ────────────────────────────────────────────
   if (!winTriggered) {
     updatePlatformWobble();
-    player.inputLeft = _keys.left;
+    player.inputLeft  = _keys.left;
     player.inputRight = _keys.right;
-    player.inputDown = _keys.down;
+    player.inputDown  = _keys.down;
     player.update(platforms);
     checkWin();
     checkExhaustion();
@@ -127,8 +161,8 @@ function drawGame() {
 
   cam.update(player);
 
-  // ── World rendering → _worldBuffer ──────────────────────────
-  let g = _worldBuffer;
+  // ── World rendering → _worldBuffer ──────────────────────
+  let g  = _worldBuffer;
   let ox = getWorldOffsetX();
 
   g.clear();
@@ -140,70 +174,118 @@ function drawGame() {
   g.translate(ox, 0);
   g.translate(-cam.x, -cam.y);
   _drawColumnBackground(g);
-  _drawClouds(g);
-  _drawGroundScenery(g);
+  if (currentLevel === 1) {
+    _drawClouds(g);
+    _drawGroundScenery(g);
+  } else {
+    _drawStarField(g);
+    // Fade-in clouds only in the lower atmospheric third of Level 2
+    _drawCloudsL2(g);
+    _drawGroundScenery(g);
+  }
   _drawPlatforms(g);
   if (finishPlatform) _drawFinishMarker(g, finishPlatform);
   _drawPlayer(g);
   g.pop();
 
-  // ── Stamp buffer onto main canvas (with blur if active) ──────
+  // ── Stamp buffer (with blur) ─────────────────────────────
   clear();
   stampWorldBuffer();
 
-  // ── Side panels (drawn on main canvas, outside play column) ──
+  // ── Level 2: colour-blindness overlay ───────────────────
+  if (currentLevel === 2 && _lvColorBlindStrength > 0) {
+    _applyColorBlindOverlay(_lvColorBlindStrength);
+  }
+
+  // ── Side panels ─────────────────────────────────────────
   _drawSidePanels(ox);
 
-  // ── UI → main canvas (always drawn after filter reset) ───────
+  // ── UI ──────────────────────────────────────────────────
   drawUI();
 }
 
-// ── Side panels matching the dark navy theme ──────────────────
+// ── Colour-blindness simulation overlay ──────────────────────
+// Draws a semi-transparent grey+blue tint over the play column,
+// simulating reduced colour distinction and contrast compression.
+// Strength 0 = invisible, 1 = heavy desaturation veil.
+function _applyColorBlindOverlay(strength) {
+  let ox = getWorldOffsetX();
+  // Altitude-scaled: stronger near the top (deep space)
+  let camMidY = cam.y + height * 0.5;
+  let altT = 1.0 - constrain(camMidY / LEVEL_HEIGHT, 0, 1); // 0=bottom, 1=top
+  let alpha = round(strength * altT * 90); // max ~65 alpha — subtle but clear
+  if (alpha < 2) return;
+
+  noStroke();
+  // Muted blue-grey tint — mimics deuteranopia / contrast compression
+  fill(80, 82, 100, alpha);
+  rect(ox, 0, PLAY_WIDTH, height);
+}
+
+// ── Side panels ───────────────────────────────────────────────
 function _drawSidePanels(ox) {
   noStroke();
   let camMidY = cam.y + height * 0.5;
   let t = 1 - constrain(camMidY / LEVEL_HEIGHT, 0, 1);
-  let r = lerp(135, 10, t);
-  let gVal = lerp(195, 20, t);
-  let b = lerp(255, 80, t);
+  let r, gVal, b;
+  if (currentLevel === 2) {
+    // Deep space: dark slate sides
+    r    = lerp(30, 5,  t);
+    gVal = lerp(35, 8,  t);
+    b    = lerp(55, 20, t);
+  } else {
+    r    = lerp(135, 10,  t);
+    gVal = lerp(195, 20,  t);
+    b    = lerp(255, 80,  t);
+  }
   fill(r, gVal, b);
-  rect(0, 0, ox, height);
+  rect(0,             0, ox,                    height);
   rect(ox + PLAY_WIDTH, 0, width - ox - PLAY_WIDTH, height);
 }
 
 // ── Win detection ─────────────────────────────────────────────
 function checkWin() {
   if (!finishPlatform || winTriggered) return;
-  const fp = finishPlatform;
+  const fp   = finishPlatform;
   const onTop =
     player.onGround &&
     player.x + player.w > fp.x &&
-    player.x < fp.x + fp.w &&
+    player.x             < fp.x + fp.w &&
     abs(player.y + player.h - fp.y) < 4;
   if (onTop) {
     winTriggered = true;
-    if (typeof winSound !== "undefined" && winSound.isLoaded()) {
-      winSound.play();
-    }
-    if (typeof bgMusic !== "undefined" && bgMusic.isPlaying()) {
-      bgMusic.pause();
-    }
+    if (typeof winSound !== "undefined" && winSound.isLoaded()) winSound.play();
+    if (typeof bgMusic  !== "undefined" && bgMusic.isPlaying()) bgMusic.pause();
   }
 }
 
 // ── Exhaustion / lose detection ───────────────────────────────
 function checkExhaustion() {
-  if (player.isExhausted) {
-    currentScreen = "lose";
-  }
+  if (player.isExhausted) currentScreen = "lose";
 }
 
-// ── Platform wobble (Layer 3) ─────────────────────────────────
-// Disabled for Level 1: platforms are static so the intro is learnable
-// without the added challenge of moving surfaces. The wobble constants
-// in constants.js are retained for future levels.
+// ── Platform wobble / movement ───────────────────────────────
+// Level 1: no-op (preserves original behaviour exactly).
+// Level 2: static platforms use the Layer 3 wobble from constants.js;
+//          moving platforms (moving:true) animate horizontally.
 function updatePlatformWobble() {
-  // No-op in Level 1.
+  if (currentLevel === 1) return; // Level 1 unchanged
+
+  for (let p of platforms) {
+    if (p.zone === "ground" || p.isFinish) continue;
+
+    if (p.moving) {
+      // Simple sinusoidal horizontal travel
+      p.wobblePhase += p.moveSpeed;
+      p.x = p.baseX + sin(p.wobblePhase) * p.moveRange;
+    } else {
+      // Layer 3: altitude-scaled wobble (same constants as Level 1 design intent)
+      let altT = constrain((_groundY - p.y) / _climbPx, 0, 1);
+      let amp  = PLAT_WOBBLE_AMP_MAX * pow(altT, PLAT_WOBBLE_CURVE);
+      p.wobblePhase += PLAT_WOBBLE_FREQ;
+      p.x = p.baseX + sin(p.wobblePhase) * amp;
+    }
+  }
 }
 
 // ── Checkpoint refill ─────────────────────────────────────────
@@ -212,85 +294,128 @@ function refillCheckpoint() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Private draw helpers — all accept a graphics context (g)
+// Private draw helpers
 // ══════════════════════════════════════════════════════════════
 
-// ── Clouds scattered through the mid-altitude sky ────────────
-// Drawn after the background gradient but before platforms so they
-// sit behind everything else. Uses CLOUD_DEFS array defined above.
+// ── Star field (Level 2 only) ─────────────────────────────────
+function _drawStarField(g) {
+  g.noStroke();
+  for (let s of _bgStars) {
+    let twinkle = 0.6 + 0.4 * sin(frameCount * 0.04 + s.twinkleOffset);
+    let alpha   = round(s.brightness * twinkle);
+    g.fill(230, 235, 255, alpha);
+    g.ellipse(s.x, s.y, s.r * 2, s.r * 2);
+  }
+}
+
+// ── Clouds for Level 2 (faded at altitude, invisible near top) ─
+function _drawCloudsL2(g) {
+  if (!imgCloud1 || !imgCloud2) return;
+  for (let c of CLOUD_DEFS) {
+    // Only draw clouds in the lower 45 % of the level (atmospheric zone)
+    let cloudT = constrain((_groundY - c.y) / _climbPx, 0, 1);
+    if (cloudT > 0.45) continue;
+    let fadeAlpha = round(map(cloudT, 0.35, 0.45, 255, 0));
+    let img = c.type === 1 ? imgCloud1 : imgCloud2;
+    let cw  = img.width  * c.scale;
+    let ch  = img.height * c.scale;
+    g.tint(255, 255, 255, fadeAlpha);
+    g.image(img, c.x, c.y, cw, ch);
+    g.noTint();
+  }
+}
+
+// ── Clouds (Level 1 — unchanged) ─────────────────────────────
 function _drawClouds(g) {
   if (!imgCloud1 || !imgCloud2) return;
   g.noTint();
   for (let c of CLOUD_DEFS) {
     let img = c.type === 1 ? imgCloud1 : imgCloud2;
-    let cw = img.width * c.scale;
-    let ch = img.height * c.scale;
+    let cw  = img.width  * c.scale;
+    let ch  = img.height * c.scale;
     g.image(img, c.x, c.y, cw, ch);
   }
 }
 
-// ── Ground scenery: trees (behind house) then house ───────────
-// imgHouse and imgTree are loaded in sketch.js preload().
-// Both sprites sit with their bottom edge on SCENERY_GROUND_Y.
-// No collision — purely visual.
+// ── Ground scenery ────────────────────────────────────────────
 function _drawGroundScenery(g) {
   if (!imgTree || !imgHouse) return;
 
-  // Trees first so they render behind the house.
-  // Sink base into the ground so roots look planted.
   for (let t of SCENERY_TREES) {
-    let tw = imgTree.width * t.scale;
+    let tw = imgTree.width  * t.scale;
     let th = imgTree.height * t.scale;
     g.image(imgTree, t.x, SCENERY_GROUND_Y - th + SCENERY_TREE_SINK, tw, th);
   }
 
-  // House — base sunk so it sits on the ground surface.
-  let hw = imgHouse.width * SCENERY_HOUSE.scale;
+  let hw = imgHouse.width  * SCENERY_HOUSE.scale;
   let hh = imgHouse.height * SCENERY_HOUSE.scale;
-  g.image(
-    imgHouse,
-    SCENERY_HOUSE.x,
-    SCENERY_GROUND_Y - hh + SCENERY_HOUSE_SINK,
-    hw,
-    hh,
-  );
+  g.image(imgHouse, SCENERY_HOUSE.x, SCENERY_GROUND_Y - hh + SCENERY_HOUSE_SINK, hw, hh);
 }
 
+// ── Finish marker ─────────────────────────────────────────────
 function _drawFinishMarker(g, fp) {
-  const cx = fp.x + fp.w / 2;
+  const cx   = fp.x + fp.w / 2;
   const topY = fp.y;
 
   let pulse = 0.5 + 0.5 * sin(frameCount * 0.06);
   g.noStroke();
-  g.fill(180, 255, 160, 30 + 40 * pulse);
-  g.rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
 
-  g.stroke(200, 200, 200);
-  g.strokeWeight(2);
-  g.line(cx, topY, cx, topY - 80);
-  g.noStroke();
+  if (currentLevel === 2) {
+    // Space-themed finish: cyan/white glow
+    g.fill(80, 200, 255, 30 + 40 * pulse);
+    g.rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
 
-  let wave = sin(frameCount * 0.08) * 6;
-  g.fill(100, 220, 100);
-  g.beginShape();
-  g.vertex(cx, topY - 78);
-  g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
-  g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
-  g.vertex(cx, topY - 56);
-  g.endShape(CLOSE);
+    g.stroke(160, 220, 255);
+    g.strokeWeight(2);
+    g.line(cx, topY, cx, topY - 80);
+    g.noStroke();
 
-  g.fill(200, 255, 180, 180 + 60 * pulse);
-  g.noStroke();
-  g.textAlign(CENTER, BOTTOM);
-  g.textSize(13);
-  g.textFont("monospace");
-  g.text("G O A L", cx, topY - 86);
+    let wave = sin(frameCount * 0.08) * 6;
+    g.fill(100, 200, 255);
+    g.beginShape();
+    g.vertex(cx,           topY - 78);
+    g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
+    g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
+    g.vertex(cx,           topY - 56);
+    g.endShape(CLOSE);
+
+    g.fill(180, 240, 255, 180 + 60 * pulse);
+    g.noStroke();
+    g.textAlign(CENTER, BOTTOM);
+    g.textSize(13);
+    g.textFont("monospace");
+    g.text("D E E P  S P A C E", cx, topY - 86);
+  } else {
+    g.fill(180, 255, 160, 30 + 40 * pulse);
+    g.rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
+
+    g.stroke(200, 200, 200);
+    g.strokeWeight(2);
+    g.line(cx, topY, cx, topY - 80);
+    g.noStroke();
+
+    let wave = sin(frameCount * 0.08) * 6;
+    g.fill(100, 220, 100);
+    g.beginShape();
+    g.vertex(cx,           topY - 78);
+    g.vertex(cx + 36 + wave, topY - 68 + wave * 0.3);
+    g.vertex(cx + 34 + wave, topY - 58 + wave * 0.3);
+    g.vertex(cx,           topY - 56);
+    g.endShape(CLOSE);
+
+    g.fill(200, 255, 180, 180 + 60 * pulse);
+    g.noStroke();
+    g.textAlign(CENTER, BOTTOM);
+    g.textSize(13);
+    g.textFont("monospace");
+    g.text("G O A L", cx, topY - 86);
+  }
 
   for (let s = 0; s < 4; s++) {
     let angle = frameCount * 0.04 + s * (PI / 2);
-    let r = 28 + 4 * pulse;
-    let sx = cx + cos(angle) * r;
-    let sy = topY - 40 + sin(angle) * r * 0.5;
+    let r     = 28 + 4 * pulse;
+    let sx    = cx + cos(angle) * r;
+    let sy    = topY - 40 + sin(angle) * r * 0.5;
     g.fill(255, 240, 100, 200);
     g.noStroke();
     _drawStar(g, sx, sy, 4, 8, 5);
@@ -308,16 +433,27 @@ function _drawStar(g, x, y, r1, r2, pts) {
   g.endShape(CLOSE);
 }
 
+// ── Column background ─────────────────────────────────────────
 function _drawColumnBackground(g) {
   g.noStroke();
   let strips = 40;
   let stripH = LEVEL_HEIGHT / strips;
 
   for (let i = 0; i < strips; i++) {
-    let t = 1 - i / strips;
-    let r = lerp(135, 10, t);
-    let gVal = lerp(195, 20, t);
-    let b = lerp(255, 80, t);
+    let t = 1 - i / strips; // 0 at top, 1 at bottom
+    let r, gVal, b;
+
+    if (currentLevel === 2) {
+      // Bottom (atmosphere) → warm twilight blue
+      // Top (deep space)    → near-black with slight violet
+      r    = round(lerp(15,  5, t));
+      gVal = round(lerp(20,  8, t));
+      b    = round(lerp(60, 28, t));
+    } else {
+      r    = round(lerp(135, 10, t));
+      gVal = round(lerp(195, 20, t));
+      b    = round(lerp(255, 80, t));
+    }
     g.fill(r, gVal, b);
     g.rect(0, i * stripH, PLAY_WIDTH, stripH + 1);
   }
@@ -332,58 +468,62 @@ function _drawColumnBackground(g) {
   for (let i = 0; i < 30; i++) {
     let a = map(i, 0, 30, 25, 0);
     g.fill(0, 10, 40, a);
-    g.rect(i, 0, 1, LEVEL_HEIGHT);
+    g.rect(i,               0, 1, LEVEL_HEIGHT);
     g.rect(PLAY_WIDTH - i - 1, 0, 1, LEVEL_HEIGHT);
   }
 
-  // ── Pixel grid overlay ───────────────────────────────────
   g.stroke(0, 0, 0, 8);
   g.strokeWeight(1);
   let gridSize = 8;
-  for (let x = 0; x < PLAY_WIDTH; x += gridSize) {
-    g.line(x, 0, x, LEVEL_HEIGHT);
-  }
-  for (let y = 0; y < LEVEL_HEIGHT; y += gridSize) {
-    g.line(0, y, PLAY_WIDTH, y);
-  }
+  for (let x = 0; x < PLAY_WIDTH; x += gridSize) g.line(x, 0, x, LEVEL_HEIGHT);
+  for (let y = 0; y < LEVEL_HEIGHT; y += gridSize) g.line(0, y, PLAY_WIDTH, y);
   g.noStroke();
 }
 
+// ── Platform rendering ────────────────────────────────────────
 function _drawPlatforms(g) {
   g.noStroke();
 
-  // ── Ground platform image ──────────────────────────────────
   if (imgGround) {
     const gp = platforms.find((p) => p.zone === "ground");
-    if (gp) {
-      // Draw at natural image height to avoid squishing the sprite
-      g.image(imgGround, gp.x, gp.y - 40, gp.w, imgGround.height);
-    }
+    if (gp) g.image(imgGround, gp.x, gp.y - 40, gp.w, imgGround.height);
   }
 
   for (let p of platforms) {
-    if (p.isFinish) continue;
-    if (p.zone === "ground") continue; // skip — drawn as image above
+    if (p.isFinish)        continue;
+    if (p.zone === "ground") continue;
 
-    const lk = p.laneKey || "C";
-    const isWall = lk === "LL" || lk === "RR";
-    const isPeak = p.section === "Peak";
+    const lk      = p.laneKey || "C";
+    const isWall  = lk === "LL" || lk === "RR";
+    const isPeak  = p.section === "Peak"   || p.section === "Summit";
     const isZigzag = p.section === "Zigzag";
     const isNarrow = p.w < 155;
 
-    // Opacity gradient: platforms near the ground start semi-transparent
-    // (easy, familiar terrain), growing fully opaque as the player climbs.
-    // This mirrors colour-perception fatigue — the world hardens as you tire.
-    // altitudeFrac = 0 at bottom of playable zone, 1 at finish platform.
     let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
-    // Map fraction → alpha: low platforms 255 (fully solid), upper ~20 (nearly invisible)
-    let platAlpha = round(lerp(255, 40, platAltFrac));
-    // Flatten the colour range: all platforms draw from a dark steel-blue base.
-    // The JSON colours still shift slightly but we clamp them down so the hue
-    // difference is subtle — opacity does the heavy lifting, not colour.
-    let baseR = round(lerp(60, 85, platAltFrac));
-    let baseG = round(lerp(85, 110, platAltFrac));
-    let baseB = round(lerp(120, 150, platAltFrac));
+
+    let baseR, baseG, baseB, platAlpha;
+
+    if (currentLevel === 2) {
+      // ── Level 2 platform colours ──────────────────────────
+      // Compressed colour range + contrast reduction for colour-blindness theme.
+      // All platforms are muted blue-grey; the JSON colours still nudge them
+      // slightly but contrastReduction flattens the spread significantly.
+      let contrast = 1.0 - _lvContrastReduction;
+      // JSON colour, compressed toward a neutral mid-grey
+      let midR = 55, midG = 58, midB = 75;
+      baseR = round(lerp(midR, p.color[0] * 0.5 + midR * 0.5, contrast));
+      baseG = round(lerp(midG, p.color[1] * 0.5 + midG * 0.5, contrast));
+      baseB = round(lerp(midB, p.color[2] * 0.5 + midB * 0.5, contrast));
+      // Fade transparency increases at altitude (harder to see = more disorienting)
+      platAlpha = round(lerp(240, 55, platAltFrac));
+    } else {
+      // Level 1 — original logic
+      platAlpha = round(lerp(255, 40, platAltFrac));
+      baseR = round(lerp(60,  85, platAltFrac));
+      baseG = round(lerp(85, 110, platAltFrac));
+      baseB = round(lerp(120, 150, platAltFrac));
+    }
+
     g.fill(baseR, baseG, baseB, platAlpha);
     g.rect(p.x, p.y, p.w, p.h, 3);
 
@@ -394,14 +534,25 @@ function _drawPlatforms(g) {
     if (isWall) {
       g.noStroke();
       g.fill(255, 255, 255, 18);
-      if (lk === "LL") g.rect(p.x, p.y, 3, p.h, 3, 0, 0, 3);
-      else g.rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
+      if (lk === "LL") g.rect(p.x,           p.y, 3, p.h, 3, 0, 0, 3);
+      else             g.rect(p.x + p.w - 3, p.y, 3, p.h, 0, 3, 3, 0);
     }
 
     if (isPeak || (isZigzag && isNarrow)) {
       g.noFill();
-      g.stroke(215, 145, 55, 50);
+      let edgeCol = (currentLevel === 2) ? [80, 150, 215] : [215, 145, 55];
+      g.stroke(edgeCol[0], edgeCol[1], edgeCol[2], 50);
       g.strokeWeight(1);
+      g.rect(p.x, p.y, p.w, p.h, 3);
+      g.noStroke();
+    }
+
+    // Moving platform indicator: subtle pulse on the edge (Level 2)
+    if (p.moving) {
+      let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
+      g.noFill();
+      g.stroke(100, 180, 255, round(30 + 40 * movePulse));
+      g.strokeWeight(1.5);
       g.rect(p.x, p.y, p.w, p.h, 3);
       g.noStroke();
     }
@@ -422,34 +573,29 @@ function _drawPlatforms(g) {
   }
 }
 
+// ── Player rendering ──────────────────────────────────────────
 function _drawPlayer(g) {
   let p = player;
 
   if (!imgAstronaut) {
-    // Fallback: plain rect if image not yet loaded
     g.fill(220, 200, 160);
     g.noStroke();
     g.rect(p.x, p.y, p.w, p.h, 4);
     return;
   }
 
-  // ── Tint based on energy state ───────────────────────────────
   if (p.isExhausted) {
-    // Dark, desaturated — exhausted
     g.tint(160, 100, 100);
   } else if (p.energy < ENERGY_LOW_THRESHOLD) {
-    // Warm red shift — tired
-    let t = p.energy / ENERGY_LOW_THRESHOLD; // 0=exhausted threshold, 1=normal threshold
-    let r = 255;
+    let t  = p.energy / ENERGY_LOW_THRESHOLD;
+    let r  = 255;
     let gv = round(lerp(100, 230, t));
-    let b = round(lerp(80, 200, t));
+    let b  = round(lerp(80,  200, t));
     g.tint(r, gv, b);
   } else {
-    // Normal — no tint
     g.noTint();
   }
 
-  // ── Draw with horizontal flip for facing direction ───────────
   let dw = PLAYER_DRAW_W;
   let dh = PLAYER_DRAW_H;
   let dx = p.x + PLAYER_DRAW_OFFSET_X;
@@ -458,7 +604,6 @@ function _drawPlayer(g) {
   if (!p.facingRight) {
     g.image(imgAstronaut, dx, dy, dw, dh);
   } else {
-    // Flip horizontally: translate to right edge, scale x by -1
     g.push();
     g.translate(dx + dw, dy);
     g.scale(-1, 1);
@@ -466,11 +611,10 @@ function _drawPlayer(g) {
     g.pop();
   }
 
-  // Always clear tint after drawing so other images aren't affected
   g.noTint();
 }
 
-// ── UI (drawn on main canvas after filter reset — never blurred) ──
+// ── UI ────────────────────────────────────────────────────────
 function drawUI() {
   let ox = getWorldOffsetX();
 
@@ -484,12 +628,12 @@ function drawUI() {
   let eFrac = constrain(player.energy / ENERGY_MAX, 0, 1);
 
   let labelW = 54;
-  let pctW = 36;
-  let padX = 12;
-  let barH = 12;
+  let pctW   = 36;
+  let padX   = 12;
+  let barH   = 12;
   let barTopY = 10;
-  let trackX = ox + padX + labelW;
-  let trackW = PLAY_WIDTH - padX * 2 - labelW - pctW;
+  let trackX  = ox + padX + labelW;
+  let trackW  = PLAY_WIDTH - padX * 2 - labelW - pctW;
 
   fill(180, 200, 255, 220);
   noStroke();
@@ -545,6 +689,13 @@ function drawUI() {
     text("! LOW ENERGY !", ox + PLAY_WIDTH / 2, barTopY + barH + 5);
   }
 
+  // Level badge top-right corner of energy bar
+  fill(180, 200, 255, 160);
+  noStroke();
+  textAlign(RIGHT, CENTER);
+  textSize(9);
+  text("LVL " + currentLevel, ox + PLAY_WIDTH - padX, barTopY + barH / 2);
+
   let playerFeetY = player.y + PLAYER_H;
   let altKm = constrain(((_groundY - playerFeetY) / _climbPx) * 100, 0, 100);
 
@@ -557,49 +708,41 @@ function drawUI() {
   textSize(9);
   text(zoneName.toUpperCase(), ox + PLAY_WIDTH - padX, UI_TOP_RESERVE / 2 + 6);
 
-  let barX = ox + PLAY_WIDTH - 22;
+  let barX    = ox + PLAY_WIDTH - 22;
   let barTopYA = UI_TOP_RESERVE + height * 0.04;
-  let barHA = height * 0.55;
+  let barHA   = height * 0.55;
 
-  // Outer glow / shadow panel — wider and more opaque for visibility
   fill(0, 0, 0, 140);
   noStroke();
   rect(barX - 7, barTopYA - 6, 22, barHA + 12, 8);
 
-  // Border ring — bright so it pops against any background colour
   stroke(200, 230, 255, 200);
   strokeWeight(1.5);
   noFill();
   rect(barX - 2, barTopYA - 2, 12, barHA + 4, 5);
   noStroke();
 
-  // Dark track
   fill(8, 14, 40, 230);
   noStroke();
   rect(barX, barTopYA, 8, barHA, 4);
 
   let altFrac = altKm / 100;
-  // Colour: warm orange at ground → bright cyan/white near summit
   let aR = round(lerp(255, 180, altFrac));
   let aG = round(lerp(140, 240, altFrac));
-  let aB = round(lerp(40, 255, altFrac));
+  let aB = round(lerp(40,  255, altFrac));
 
-  // Soft glow behind the fill strip
   fill(aR, aG, aB, 40);
   rect(barX - 1, barTopYA, 10, barHA, 4);
 
-  // Main fill
   fill(aR, aG, aB, 240);
   let fillH = barHA * altFrac;
   if (fillH > 2) rect(barX, barTopYA + barHA - fillH, 8, fillH, 4);
 
-  // Top tick line
   stroke(255, 255, 255, 180);
   strokeWeight(1);
   line(barX - 3, barTopYA, barX + 11, barTopYA);
   noStroke();
 
-  // Progress marker dot — pulses gently
   if (fillH > 2) {
     let dotPulse = 0.65 + 0.35 * sin(frameCount * 0.08);
     fill(255, 255, 255, round(200 * dotPulse));
@@ -614,7 +757,6 @@ function drawUI() {
   textSize(11);
   textFont("monospace");
 
-  // Label background — dark pill
   fill(0, 0, 0, 200);
   noStroke();
   rect(barX - 32, barTopYA - 19, 46, 16, 3);
@@ -651,15 +793,25 @@ function drawUI() {
 }
 
 function getZoneLabel(altitude) {
+  if (currentLevel === 2) {
+    const t = altitude / LEVEL_HEIGHT;
+    if (t < 0.08) return "Ground";
+    if (t < 0.25) return "Atmosphere";
+    if (t < 0.45) return "Upper Atmo";
+    if (t < 0.60) return "Low Space";
+    if (t < 0.75) return "Mid Space";
+    if (t < 0.88) return "Deep Space";
+    return "SUMMIT";
+  }
   const t = altitude / LEVEL_HEIGHT;
   if (t < 0.08) return "Ground";
-  if (t < 0.2) return "Left Wall";
-  if (t < 0.3) return "Bridge";
+  if (t < 0.20) return "Left Wall";
+  if (t < 0.30) return "Bridge";
   if (t < 0.42) return "Right Wall";
   if (t < 0.52) return "Bridge";
   if (t < 0.62) return "L↔C Zigzag";
   if (t < 0.72) return "R↔C Zigzag";
-  if (t < 0.8) return "Left Ledge";
+  if (t < 0.80) return "Left Ledge";
   if (t < 0.86) return "Crossing";
   if (t < 0.92) return "Right Ledge";
   if (t < 0.96) return "Crossing";
@@ -669,26 +821,17 @@ function getZoneLabel(altitude) {
 
 // ── Input routing ─────────────────────────────────────────────
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW || kc === 65) {
-    _keys.left = true;
-    _playerHasMoved = true;
-  }
-  if (kc === RIGHT_ARROW || kc === 68) {
-    _keys.right = true;
-    _playerHasMoved = true;
-  }
-  if (kc === DOWN_ARROW || kc === 83) {
-    _keys.down = true;
-    _playerHasMoved = true;
-  }
-  if (kc === UP_ARROW || kc === 87 || kc === 32) {
+  if (kc === LEFT_ARROW  || kc === 65) { _keys.left  = true; _playerHasMoved = true; }
+  if (kc === RIGHT_ARROW || kc === 68) { _keys.right = true; _playerHasMoved = true; }
+  if (kc === DOWN_ARROW  || kc === 83) { _keys.down  = true; _playerHasMoved = true; }
+  if (kc === UP_ARROW    || kc === 87 || kc === 32) {
     player.inputJump = true;
-    _playerHasMoved = true;
+    _playerHasMoved  = true;
   }
 }
 
 function gameKeyReleased(kc) {
-  if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
+  if (kc === LEFT_ARROW  || kc === 65) _keys.left  = false;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
-  if (kc === DOWN_ARROW || kc === 83) _keys.down = false;
+  if (kc === DOWN_ARROW  || kc === 83) _keys.down  = false;
 }

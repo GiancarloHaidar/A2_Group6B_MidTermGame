@@ -1,3 +1,17 @@
+// ============================================================
+// Player.js
+//
+// Level-agnostic. Level-specific tuning is injected by initGame()
+// via three instance properties set immediately after construction:
+//
+//   player.gravityMult   — multiplies GRAVITY each frame   (default 1.0)
+//   player.jumpForceMult — multiplies JUMP_FORCE           (default 1.0)
+//   player.balanceMult   — multiplies all sway/overshoot   (default 1.0)
+//
+// Level 1 receives 1.0 for all three → behaviour is 100% identical
+// to the original. Level 2 receives values from its JSON.
+// ============================================================
+
 class Player {
   constructor(x, y) {
     this.x = x;
@@ -26,6 +40,12 @@ class Player {
     this._lowEnergyPlayed = false;
     this._fallTimer = 0;
     this._fallSoundPlayed = false;
+
+    // ── Level multipliers (set by initGame after construction) ──
+    // Defaults of 1.0 keep Level 1 identical to the original.
+    this.gravityMult = 1.0;
+    this.jumpForceMult = 1.0;
+    this.balanceMult = 1.0;
   }
 
   energySpeedMultiplier() {
@@ -56,6 +76,7 @@ class Player {
   }
 
   update(platforms) {
+    // ── Energy drain ───────────────────────────────────────────
     if (!this.isExhausted) {
       let absVx = abs(this.vx);
       if (absVx > ENERGY_MOVE_DEADZONE) {
@@ -83,6 +104,7 @@ class Player {
       }
     }
 
+    // ── Horizontal movement ────────────────────────────────────
     let effectiveSpeed = this.isExhausted
       ? 0
       : MOVE_SPEED * this.energySpeedMultiplier();
@@ -95,42 +117,44 @@ class Player {
     if (this.inputRight) this.facingRight = true;
     if (this.inputLeft) this.facingRight = false;
 
-    let friction;
-    if (hasHorizInput || !this.onGround) {
-      friction = GROUND_FRICTION;
-    } else {
-      friction = this._releaseFriction();
-    }
+    let friction =
+      hasHorizInput || !this.onGround
+        ? GROUND_FRICTION
+        : this._releaseFriction();
     this.vx = lerp(this.vx, targetVx, friction);
 
+    // ── Overshoot micro-lurch on release ──────────────────────
     let justReleased = this._prevHorizInput && !hasHorizInput;
     if (justReleased && this.onGround && abs(this.vx) > 0.05) {
-      this.vx -= this.vx * this._overshootK();
+      // balanceMult amplifies the lurch in Level 2
+      this.vx -= this.vx * this._overshootK() * this.balanceMult;
     }
     this._prevHorizInput = hasHorizInput;
 
+    // ── Jump ──────────────────────────────────────────────────
     if (this.inputJump && this.onGround && !this.isExhausted) {
-      this.vy = JUMP_FORCE;
+      // jumpForceMult < 1 = floatier, less forceful (Level 2 "space" feel)
+      this.vy = JUMP_FORCE * this.jumpForceMult;
       this.onGround = false;
       this.energy = max(0, this.energy - ENERGY_DRAIN_JUMP);
       if (this.energy === 0) {
         this.isExhausted = true;
-        if (typeof failSound !== "undefined" && failSound.isLoaded()) {
+        if (typeof failSound !== "undefined" && failSound.isLoaded())
           failSound.play();
-        }
       }
-      if (typeof jumpSound !== "undefined" && jumpSound.isLoaded()) {
+      if (typeof jumpSound !== "undefined" && jumpSound.isLoaded())
         jumpSound.play();
-      }
     }
     this.inputJump = false;
 
-    let gravThisFrame = GRAVITY;
+    // ── Gravity (gravityMult gives floaty space feel at <1) ───
+    let gravThisFrame = GRAVITY * this.gravityMult;
     if (this.inputDown && !this.onGround)
-      gravThisFrame = GRAVITY * FAST_FALL_MULTIPLIER;
+      gravThisFrame = GRAVITY * this.gravityMult * FAST_FALL_MULTIPLIER;
     this.vy += gravThisFrame;
     this.vy = constrain(this.vy, -MAX_FALL_SPEED, MAX_FALL_SPEED);
 
+    // ── Grounded sway (balanceMult amplifies all layers) ──────
     if (this.onGround) {
       this._applyGroundedSway();
     }
@@ -138,6 +162,7 @@ class Player {
     this.x += this.vx;
     this.y += this.vy;
 
+    // ── Collision ─────────────────────────────────────────────
     this.onGround = false;
     for (let p of platforms) {
       this._resolveAABB(p);
@@ -150,6 +175,7 @@ class Player {
     }
     this.x = constrain(this.x, 0, PLAY_WIDTH - this.w);
 
+    // ── Landing sound ─────────────────────────────────────────
     if (this.onGround && !this._wasOnGround) {
       if (typeof landingSound !== "undefined" && landingSound.isLoaded()) {
         landingSound.play();
@@ -157,6 +183,7 @@ class Player {
     }
     this._wasOnGround = this.onGround;
 
+    // ── Falling sound ─────────────────────────────────────────
     if (!this.onGround && this.vy > 0) {
       this._fallTimer++;
       if (this._fallTimer > 25 && !this._fallSoundPlayed) {
@@ -175,9 +202,11 @@ class Player {
     this._wobblePhase += PLAYER_SWAY_FREQ;
 
     let checkpointMul = this.onCheckpoint ? PLAYER_SWAY_CHECKPOINT_DAMPEN : 1.0;
-
     let fatigueT = 1.0 - constrain(this.energy / ENERGY_MAX, 0, 1);
-    let totalAmp = PLAYER_SWAY_AMP_BASE + PLAYER_SWAY_AMP_FATIGUE * fatigueT;
+
+    let totalAmp =
+      (PLAYER_SWAY_AMP_BASE + PLAYER_SWAY_AMP_FATIGUE * fatigueT) *
+      this.balanceMult; // ← Level 2 amplifies sway
 
     this.vx += totalAmp * checkpointMul * sin(this._wobblePhase);
   }
@@ -209,11 +238,8 @@ class Player {
         if (this.vy < 0) this.vy = 0;
       }
     } else {
-      if (overlapLeft < overlapRight) {
-        this.x = p.x - this.w;
-      } else {
-        this.x = p.x + p.w;
-      }
+      if (overlapLeft < overlapRight) this.x = p.x - this.w;
+      else this.x = p.x + p.w;
       this.vx = 0;
     }
   }

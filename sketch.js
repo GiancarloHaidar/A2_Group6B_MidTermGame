@@ -9,11 +9,18 @@ let platforms;
 let cam;
 let levelData;
 
+// ── Level management ──────────────────────────────────────────
+// Change this to 2 (or pass via query param) to start on level 2.
+// After completing Level 1 the game auto-advances to Level 2.
+let currentLevel = 1;
+let level1Data = null;
+let level2Data = null;
+
 // ── Star progression ──────────────────────────────────────────
-let _totalStars = 0; // cumulative stars earned this session
-let _starAwardedThisWin = false; // guard: award only once per win screen visit
-let _starAnimTimer = 0; // counts up when win screen opens (drives pop-in)
-const STAR_ANIM_DURATION = 40; // frames for the pop-in scale animation
+let _totalStars = 0;
+let _starAwardedThisWin = false;
+let _starAnimTimer = 0;
+const STAR_ANIM_DURATION = 40;
 
 // ── Intro video ───────────────────────────────────────────────
 let _introVideo = null;
@@ -44,15 +51,22 @@ let winSound;
 let speakingSound;
 
 function preload() {
-  levelData = loadJSON("level1.json");
-  bgMusic = loadSound("Assets/Background1.mp3");
-  jumpSound = loadSound("Assets/Jump.mp3");
+  level1Data = loadJSON("level1.json");
+  level2Data = loadJSON("level2.json");
+  bgMusic      = loadSound("Assets/Background1.mp3");
+  jumpSound    = loadSound("Assets/Jump.mp3");
   landingSound = loadSound("Assets/Landing.mp3");
   lowEnergySound = loadSound("Assets/LowEnergy.mp3");
   fallingSound = loadSound("Assets/Falling.mp3");
-  failSound = loadSound("Assets/Fail.mp3");
-  winSound = loadSound("Assets/Win.mp3");
+  failSound    = loadSound("Assets/Fail.mp3");
+  winSound     = loadSound("Assets/Win.mp3");
   speakingSound = loadSound("Assets/Speaking.mp3");
+}
+
+// ── Level helpers ─────────────────────────────────────────────
+function _loadLevel(n) {
+  currentLevel = n;
+  levelData = (n === 2) ? level2Data : level1Data;
 }
 
 // ── Intro video helpers ───────────────────────────────────────
@@ -166,7 +180,6 @@ function _playScene2() {
     _onScene2Ended();
   });
 
-  // Play the speaking sound effect when Scene 2 begins
   if (speakingSound && speakingSound.isLoaded()) speakingSound.play();
 }
 
@@ -185,6 +198,7 @@ function _onScene2Continued() {
     _introVideo.style.display = "none";
     _introVideo = null;
   }
+  _loadLevel(1);
   currentScreen = "game";
 }
 
@@ -273,6 +287,9 @@ function stampWorldBuffer() {
 function setup() {
   createCanvas(windowWidth, windowHeight);
   _worldBuffer = createGraphics(windowWidth, windowHeight);
+
+  // Default to level 1 data so initGame() has something to work with.
+  _loadLevel(1);
   initGame();
   _initBlur();
 
@@ -284,12 +301,12 @@ function setup() {
   failSound.setVolume(0.6);
   winSound.setVolume(0.6);
 
-  imgHouse = loadImage("Assets/house.png");
-  imgTree = loadImage("Assets/tree.png");
-  imgAstronaut = loadImage("Assets/astronaut.png");
-  imgGround = loadImage("Assets/ground.png");
-  imgCloud1 = loadImage("Assets/Cloud1.png");
-  imgCloud2 = loadImage("Assets/Cloud2.png");
+  imgHouse      = loadImage("Assets/house.png");
+  imgTree       = loadImage("Assets/tree.png");
+  imgAstronaut  = loadImage("Assets/astronaut.png");
+  imgGround     = loadImage("Assets/ground.png");
+  imgCloud1     = loadImage("Assets/Cloud1.png");
+  imgCloud2     = loadImage("Assets/Cloud2.png");
 
   _startIntro();
 }
@@ -308,7 +325,6 @@ function draw() {
       break;
     case "win":
       if (bgMusic.isPlaying()) bgMusic.pause();
-      // Award the star exactly once per win screen visit
       if (!_starAwardedThisWin) {
         _totalStars++;
         _starAwardedThisWin = true;
@@ -358,16 +374,22 @@ function drawWinScreen() {
 
   textSize(18);
   fill(180, 230, 255);
-  text("You reached the top.", ox + PLAY_WIDTH / 2, height / 2 - 20);
+  let winMsg = currentLevel === 1
+    ? "You reached the top of Level 1."
+    : "You escaped into deep space.";
+  text(winMsg, ox + PLAY_WIDTH / 2, height / 2 - 20);
 
-  // ── Star reward ───────────────────────────────────────────────
   _drawStarReward(ox);
 
   let blink = frameCount % 50 < 30;
   if (blink) {
     textSize(14);
     fill(140, 190, 240);
-    text("Press R to climb again", ox + PLAY_WIDTH / 2, height / 2 + 120);
+    if (currentLevel === 1) {
+      text("Press R to replay  |  Press 2 for Level 2", ox + PLAY_WIDTH / 2, height / 2 + 120);
+    } else {
+      text("Press R to climb again  |  Press 1 for Level 1", ox + PLAY_WIDTH / 2, height / 2 + 120);
+    }
   }
   textAlign(LEFT, BASELINE);
 }
@@ -377,13 +399,13 @@ function _drawStarReward(ox) {
   let centerX = ox + PLAY_WIDTH / 2;
   let centerY = height / 2 + 45;
 
-  // Label
   textFont("monospace");
   textSize(13);
   textAlign(CENTER, CENTER);
   fill(180, 230, 255, 200);
   noStroke();
-  text("LEVEL 1 STAR COLLECTED", centerX, centerY - 28);
+  let starLabel = "LEVEL " + currentLevel + " STAR COLLECTED";
+  text(starLabel, centerX, centerY - 28);
 
   let animT = constrain(_starAnimTimer / STAR_ANIM_DURATION, 0, 1);
 
@@ -397,14 +419,12 @@ function _drawStarReward(ox) {
     let sy = centerY + 8;
     let isNewest = i === _totalStars - 1;
 
-    // easeOutBack pop-in for the newest star; clamp so scale() never goes <= 0
     let s = isNewest ? max(0.01, _easeOutBack(animT)) : 1.0;
 
     push();
     translate(sx, sy);
     scale(s);
 
-    // Fading glow behind the newest star while the animation plays
     if (isNewest && animT < 1.0) {
       let glowA = round(map(animT, 0, 1, 200, 0));
       noStroke();
@@ -412,12 +432,10 @@ function _drawStarReward(ox) {
       ellipse(0, 0, starSize * 2.2, starSize * 2.2);
     }
 
-    // Star body
     noStroke();
     fill(255, 218, 50);
     _drawStarShape(0, 0, starSize * 0.42, starSize * 0.9, 5);
 
-    // Shine highlight
     fill(255, 255, 200, 160);
     _drawStarShape(-2, -3, starSize * 0.18, starSize * 0.38, 5);
 
@@ -425,7 +443,6 @@ function _drawStarReward(ox) {
   }
 }
 
-// Draws a 5-pointed star centered at (cx, cy)
 function _drawStarShape(cx, cy, r1, r2, pts) {
   beginShape();
   for (let i = 0; i < pts * 2; i++) {
@@ -436,8 +453,6 @@ function _drawStarShape(cx, cy, r1, r2, pts) {
   endShape(CLOSE);
 }
 
-// easeOutBack: slight overshoot then settle — satisfying pop feel
-// max(0.001) prevents p5 scale() from receiving 0 or negative values
 function _easeOutBack(t) {
   const c1 = 1.70158;
   const c3 = c1 + 1;
@@ -501,16 +516,33 @@ function keyPressed() {
   if (currentScreen === "game") {
     gameKeyPressed(keyCode);
   }
-  if (
-    (currentScreen === "win" || currentScreen === "lose") &&
-    (key === "r" || key === "R")
-  ) {
-    // Reset the per-win guard so the next completion awards a new star
-    _starAwardedThisWin = false;
-    currentScreen = "game";
-    initGame();
-    _initBlur();
-    bgMusic.loop();
+
+  if (currentScreen === "win" || currentScreen === "lose") {
+    if (key === "r" || key === "R") {
+      // Replay the same level
+      _starAwardedThisWin = false;
+      currentScreen = "game";
+      initGame();
+      _initBlur();
+      if (!bgMusic.isPlaying()) bgMusic.loop();
+    }
+    // Level select from win/lose screen
+    if (key === "1") {
+      _starAwardedThisWin = false;
+      _loadLevel(1);
+      currentScreen = "game";
+      initGame();
+      _initBlur();
+      if (!bgMusic.isPlaying()) bgMusic.loop();
+    }
+    if (key === "2") {
+      _starAwardedThisWin = false;
+      _loadLevel(2);
+      currentScreen = "game";
+      initGame();
+      _initBlur();
+      if (!bgMusic.isPlaying()) bgMusic.loop();
+    }
   }
 }
 
