@@ -533,12 +533,6 @@ function keyPressed() {
     }
   }
 
-  if (currentScreen === "intro") return;
-
-  if (currentScreen === "game") {
-    gameKeyPressed(keyCode);
-  }
-
   if (currentScreen === "win" || currentScreen === "lose") {
     if (key === "r" || key === "R") {
       // Replay the same level
