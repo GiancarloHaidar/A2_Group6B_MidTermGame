@@ -1,6 +1,6 @@
 # Project Title
 
-Assignment 2: Mid-Term Game (Group Project)
+Assignment 3: Final Game (Group Project)
 
 ---
 
