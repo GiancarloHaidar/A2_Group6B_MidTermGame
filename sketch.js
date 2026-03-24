@@ -53,20 +53,20 @@ let speakingSound;
 function preload() {
   level1Data = loadJSON("level1.json");
   level2Data = loadJSON("level2.json");
-  bgMusic      = loadSound("Assets/Background1.mp3");
-  jumpSound    = loadSound("Assets/Jump.mp3");
+  bgMusic = loadSound("Assets/Background1.mp3");
+  jumpSound = loadSound("Assets/Jump.mp3");
   landingSound = loadSound("Assets/Landing.mp3");
   lowEnergySound = loadSound("Assets/LowEnergy.mp3");
   fallingSound = loadSound("Assets/Falling.mp3");
-  failSound    = loadSound("Assets/Fail.mp3");
-  winSound     = loadSound("Assets/Win.mp3");
+  failSound = loadSound("Assets/Fail.mp3");
+  winSound = loadSound("Assets/Win.mp3");
   speakingSound = loadSound("Assets/Speaking.mp3");
 }
 
 // ── Level helpers ─────────────────────────────────────────────
 function _loadLevel(n) {
   currentLevel = n;
-  levelData = (n === 2) ? level2Data : level1Data;
+  levelData = n === 2 ? level2Data : level1Data;
 }
 
 // ── Intro video helpers ───────────────────────────────────────
@@ -301,12 +301,12 @@ function setup() {
   failSound.setVolume(0.6);
   winSound.setVolume(0.6);
 
-  imgHouse      = loadImage("Assets/house.png");
-  imgTree       = loadImage("Assets/tree.png");
-  imgAstronaut  = loadImage("Assets/astronaut.png");
-  imgGround     = loadImage("Assets/ground.png");
-  imgCloud1     = loadImage("Assets/Cloud1.png");
-  imgCloud2     = loadImage("Assets/Cloud2.png");
+  imgHouse = loadImage("Assets/house.png");
+  imgTree = loadImage("Assets/tree.png");
+  imgAstronaut = loadImage("Assets/astronaut.png");
+  imgGround = loadImage("Assets/ground.png");
+  imgCloud1 = loadImage("Assets/Cloud1.png");
+  imgCloud2 = loadImage("Assets/Cloud2.png");
 
   _startIntro();
 }
@@ -374,9 +374,10 @@ function drawWinScreen() {
 
   textSize(18);
   fill(180, 230, 255);
-  let winMsg = currentLevel === 1
-    ? "You reached the top of Level 1."
-    : "You escaped into deep space.";
+  let winMsg =
+    currentLevel === 1
+      ? "You reached the top of Level 1."
+      : "You escaped into deep space.";
   text(winMsg, ox + PLAY_WIDTH / 2, height / 2 - 20);
 
   _drawStarReward(ox);
@@ -386,9 +387,17 @@ function drawWinScreen() {
     textSize(14);
     fill(140, 190, 240);
     if (currentLevel === 1) {
-      text("Press R to replay  |  Press 2 for Level 2", ox + PLAY_WIDTH / 2, height / 2 + 120);
+      text(
+        "Press R to replay  |  Press 2 for Level 2",
+        ox + PLAY_WIDTH / 2,
+        height / 2 + 120,
+      );
     } else {
-      text("Press R to climb again  |  Press 1 for Level 1", ox + PLAY_WIDTH / 2, height / 2 + 120);
+      text(
+        "Press R to climb again  |  Press 1 for Level 1",
+        ox + PLAY_WIDTH / 2,
+        height / 2 + 120,
+      );
     }
   }
   textAlign(LEFT, BASELINE);
@@ -511,6 +520,19 @@ function drawWinStar(x, y, r1, r2, pts) {
 }
 
 function keyPressed() {
+  if (currentScreen === "intro") return;
+
+  if (currentScreen === "game") {
+    gameKeyPressed(keyCode);
+
+    // TEMP: press T to instantly switch to Level 2 for testing
+    if (key === "t" || key === "T") {
+      _loadLevel(2);
+      initGame();
+      _initBlur();
+    }
+  }
+
   if (currentScreen === "intro") return;
 
   if (currentScreen === "game") {
