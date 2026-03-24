@@ -33,8 +33,9 @@ let _climbPx = 1;
 let _lvGravityMult = 1.0;
 let _lvJumpForceMult = 1.0;
 let _lvBalanceMult = 1.0;
-let _lvColorBlindStrength = 0.0; // 0 = off, 1 = fully desaturated / compressed
-let _lvContrastReduction = 0.0; // 0 = off, 1 = maximally flattened
+let _lvColorBlindStrength = 0.0;
+let _lvContrastReduction = 0.0;
+let _lvEnergyDrainMult = 1.0;
 
 // ── Stars (Level 2 background) ───────────────────────────────
 // Generated once in initGame so they don't re-randomise each frame.
@@ -91,6 +92,7 @@ function initGame() {
   _lvBalanceMult = levelData.balanceMultiplier || 1.0;
   _lvColorBlindStrength = levelData.colorBlindnessStrength || 0.0;
   _lvContrastReduction = levelData.platformContrastReduction || 0.0;
+  _lvEnergyDrainMult = levelData.energyDrainMultiplier || 1.0;
 
   for (let p of levelData.platforms) {
     const plat = {
@@ -120,6 +122,7 @@ function initGame() {
   player.gravityMult = _lvGravityMult;
   player.jumpForceMult = _lvJumpForceMult;
   player.balanceMult = _lvBalanceMult;
+  player.energyDrainMult = _lvEnergyDrainMult;
 
   cam = new Camera2D();
   cam.y = player.y + player.h / 2 - height * CAM_ANCHOR_Y;
@@ -179,7 +182,6 @@ function drawGame() {
     _drawGroundScenery(g);
   } else {
     _drawStarField(g);
-    // Fade-in clouds only in the lower atmospheric third of Level 2
     _drawCloudsL2(g);
     _drawGroundScenery(g);
   }
@@ -205,19 +207,14 @@ function drawGame() {
 }
 
 // ── Colour-blindness simulation overlay ──────────────────────
-// Draws a semi-transparent grey+blue tint over the play column,
-// simulating reduced colour distinction and contrast compression.
-// Strength 0 = invisible, 1 = heavy desaturation veil.
 function _applyColorBlindOverlay(strength) {
   let ox = getWorldOffsetX();
-  // Altitude-scaled: stronger near the top (deep space)
   let camMidY = cam.y + height * 0.5;
-  let altT = 1.0 - constrain(camMidY / LEVEL_HEIGHT, 0, 1); // 0=bottom, 1=top
-  let alpha = round(strength * altT * 90); // max ~65 alpha — subtle but clear
+  let altT = 1.0 - constrain(camMidY / LEVEL_HEIGHT, 0, 1);
+  let alpha = round(strength * altT * 90);
   if (alpha < 2) return;
 
   noStroke();
-  // Muted blue-grey tint — mimics deuteranopia / contrast compression
   fill(80, 82, 100, alpha);
   rect(ox, 0, PLAY_WIDTH, height);
 }
@@ -229,7 +226,6 @@ function _drawSidePanels(ox) {
   let t = 1 - constrain(camMidY / LEVEL_HEIGHT, 0, 1);
   let r, gVal, b;
   if (currentLevel === 2) {
-    // Deep space: dark slate sides
     r = lerp(30, 5, t);
     gVal = lerp(35, 8, t);
     b = lerp(55, 20, t);
@@ -265,25 +261,19 @@ function checkExhaustion() {
 }
 
 // ── Platform wobble / movement ───────────────────────────────
-// Level 1: no-op (preserves original behaviour exactly).
-// Level 2: static platforms use the Layer 3 wobble from constants.js;
-//          moving platforms (moving:true) animate horizontally.
 function updatePlatformWobble() {
-  if (currentLevel === 1) return; // Level 1 unchanged
+  if (currentLevel === 1) return;
 
   for (let p of platforms) {
     if (p.zone === "ground" || p.isFinish) continue;
 
-    if (p.moving) {
-      // Simple sinusoidal horizontal travel
-      p.wobblePhase += p.moveSpeed;
-      p.x = p.baseX + sin(p.wobblePhase) * p.moveRange;
-    } else {
-      // Layer 3: altitude-scaled wobble (same constants as Level 1 design intent)
-      let altT = constrain((_groundY - p.y) / _climbPx, 0, 1);
-      let amp = PLAT_WOBBLE_AMP_MAX * pow(altT, PLAT_WOBBLE_CURVE);
-      p.wobblePhase += PLAT_WOBBLE_FREQ;
-      p.x = p.baseX + sin(p.wobblePhase) * amp;
+    if (p.moving && currentLevel !== 2) {
+      let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
+      g.noFill();
+      g.stroke(100, 180, 255, round(30 + 40 * movePulse));
+      g.strokeWeight(1.5);
+      g.rect(p.x, p.y, p.w, p.h, 3);
+      g.noStroke();
     }
   }
 }
@@ -308,11 +298,10 @@ function _drawStarField(g) {
   }
 }
 
-// ── Clouds for Level 2 (faded at altitude, invisible near top) ─
+// ── Clouds for Level 2 ────────────────────────────────────────
 function _drawCloudsL2(g) {
   if (!imgCloud1 || !imgCloud2) return;
   for (let c of CLOUD_DEFS) {
-    // Only draw clouds in the lower 45 % of the level (atmospheric zone)
     let cloudT = constrain((_groundY - c.y) / _climbPx, 0, 1);
     if (cloudT > 0.45) continue;
     let fadeAlpha = round(map(cloudT, 0.35, 0.45, 255, 0));
@@ -367,7 +356,6 @@ function _drawFinishMarker(g, fp) {
   g.noStroke();
 
   if (currentLevel === 2) {
-    // Space-themed finish: cyan/white glow
     g.fill(80, 200, 255, 30 + 40 * pulse);
     g.rect(fp.x - 6, topY - 90, fp.w + 12, 90, 4);
 
@@ -450,11 +438,9 @@ function _drawColumnBackground(g) {
     let r, gVal, b;
 
     if (currentLevel === 2) {
-      // Bottom (atmosphere) → warm twilight blue
-      // Top (deep space)    → near-black with slight violet
-      r = round(lerp(15, 5, t));
-      gVal = round(lerp(20, 8, t));
-      b = round(lerp(60, 28, t));
+      r = round(lerp(10, 0, t));
+      gVal = round(lerp(20, 0, t));
+      b = round(lerp(80, 0, t));
     } else {
       r = round(lerp(135, 10, t));
       gVal = round(lerp(195, 20, t));
@@ -510,28 +496,17 @@ function _drawPlatforms(g) {
     let baseR, baseG, baseB, platAlpha;
 
     if (currentLevel === 2) {
-      // ── Level 2 platform colours ──────────────────────────
-      // Compressed colour range + contrast reduction for colour-blindness theme.
-      // All platforms are muted blue-grey; the JSON colours still nudge them
-      // slightly but contrastReduction flattens the spread significantly.
-      let contrast = 1.0 - _lvContrastReduction;
-      // JSON colour, compressed toward a neutral mid-grey
-      let midR = 55,
-        midG = 58,
-        midB = 75;
-      baseR = round(lerp(midR, p.color[0] * 0.5 + midR * 0.5, contrast));
-      baseG = round(lerp(midG, p.color[1] * 0.5 + midG * 0.5, contrast));
-      baseB = round(lerp(midB, p.color[2] * 0.5 + midB * 0.5, contrast));
-      // Fade transparency increases at altitude (harder to see = more disorienting)
-      platAlpha = round(lerp(240, 55, platAltFrac));
+      baseR = round(lerp(40, 15, platAltFrac));
+      baseG = round(lerp(55, 25, platAltFrac));
+      baseB = round(lerp(120, 45, platAltFrac));
+      platAlpha = round(lerp(160, 110, platAltFrac));
     } else {
-      // Level 1 — original logic
+      // Level 1 — original logic unchanged
       platAlpha = round(lerp(255, 40, platAltFrac));
       baseR = round(lerp(60, 85, platAltFrac));
       baseG = round(lerp(85, 110, platAltFrac));
       baseB = round(lerp(120, 150, platAltFrac));
     }
-
     g.fill(baseR, baseG, baseB, platAlpha);
     g.rect(p.x, p.y, p.w, p.h, 3);
 
@@ -555,7 +530,6 @@ function _drawPlatforms(g) {
       g.noStroke();
     }
 
-    // Moving platform indicator: subtle pulse on the edge (Level 2)
     if (p.moving) {
       let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
       g.noFill();
@@ -697,7 +671,6 @@ function drawUI() {
     text("! LOW ENERGY !", ox + PLAY_WIDTH / 2, barTopY + barH + 5);
   }
 
-  // Level badge top-right corner of energy bar
   fill(180, 200, 255, 160);
   noStroke();
   textAlign(LEFT, TOP);

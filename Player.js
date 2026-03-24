@@ -7,8 +7,9 @@
 //   player.gravityMult   — multiplies GRAVITY each frame   (default 1.0)
 //   player.jumpForceMult — multiplies JUMP_FORCE           (default 1.0)
 //   player.balanceMult   — multiplies all sway/overshoot   (default 1.0)
+//   player.energyDrainMult — multiplies energy drain rate  (default 1.0)
 //
-// Level 1 receives 1.0 for all three → behaviour is 100% identical
+// Level 1 receives 1.0 for all four → behaviour is 100% identical
 // to the original. Level 2 receives values from its JSON.
 // ============================================================
 
@@ -46,6 +47,7 @@ class Player {
     this.gravityMult = 1.0;
     this.jumpForceMult = 1.0;
     this.balanceMult = 1.0;
+    this.energyDrainMult = 1.0;
   }
 
   energySpeedMultiplier() {
@@ -80,11 +82,13 @@ class Player {
     if (!this.isExhausted) {
       let absVx = abs(this.vx);
       if (absVx > ENERGY_MOVE_DEADZONE) {
-        this.energy -= ENERGY_DRAIN_HORIZ * absVx;
+        this.energy -= ENERGY_DRAIN_HORIZ * absVx * this.energyDrainMult;
       }
       if (this.vy > ENERGY_FALL_THRESHOLD) {
         this.energy -=
-          ENERGY_DRAIN_FALL_OVER * (this.vy - ENERGY_FALL_THRESHOLD);
+          ENERGY_DRAIN_FALL_OVER *
+          (this.vy - ENERGY_FALL_THRESHOLD) *
+          this.energyDrainMult;
       }
       if (this.energy <= 0) {
         this.energy = 0;
@@ -206,7 +210,7 @@ class Player {
 
     let totalAmp =
       (PLAYER_SWAY_AMP_BASE + PLAYER_SWAY_AMP_FATIGUE * fatigueT) *
-      this.balanceMult; // ← Level 2 amplifies sway
+      this.balanceMult;
 
     this.vx += totalAmp * checkpointMul * sin(this._wobblePhase);
   }
@@ -231,7 +235,15 @@ class Player {
     if (minY < minX) {
       if (overlapTop < overlapBot) {
         this.y = p.y - this.h;
-        if (this.vy > 0) this.vy = -this.vy * 0.5; // ← bounce
+        if (this.vy > 0) {
+          if (typeof currentLevel !== "undefined" && currentLevel === 2) {
+            // Level 2: small bounce on landing, mimicking low gravity
+            this.vy = this.vy > 1.5 ? -this.vy * 0.5 : 0;
+          } else {
+            // Level 1: clean stop
+            this.vy = 0;
+          }
+        }
         this.onGround = true;
       } else {
         this.y = p.y + p.h;

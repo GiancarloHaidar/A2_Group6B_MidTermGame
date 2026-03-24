@@ -3,11 +3,12 @@
   "startY": 3900,
   "finishY": 275,
 
-  "gravityMultiplier": 0.62,
-  "jumpForceMultiplier": 0.88,
+  "gravityMultiplier": 0.5,
+  "jumpForceMultiplier": 0.75,
   "balanceMultiplier": 0.5,
   "colorBlindnessStrength": 0.72,
   "platformContrastReduction": 0.6,
+  "energyDrainMultiplier": 0.7,
 
   "platforms": [
     {
@@ -19,7 +20,6 @@
       "zone": "ground",
       "section": "ground"
     },
-
     {
       "x": 290,
       "y": 3830,
@@ -80,7 +80,6 @@
       "section": "Atmosphere",
       "laneKey": "LL"
     },
-
     {
       "x": 200,
       "y": 3165,
@@ -141,7 +140,6 @@
       "section": "UpperAtmo",
       "laneKey": "C"
     },
-
     {
       "x": 450,
       "y": 2476,
@@ -202,7 +200,6 @@
       "section": "LowSpace",
       "laneKey": "C"
     },
-
     {
       "x": 150,
       "y": 1785,
@@ -263,7 +260,6 @@
       "section": "MidSpace",
       "laneKey": "C"
     },
-
     {
       "x": 200,
       "y": 1100,
@@ -304,7 +300,6 @@
       "section": "DeepSpace",
       "laneKey": "L"
     },
-
     {
       "x": 375,
       "y": 640,
@@ -344,7 +339,6 @@
       "moveRange": 80,
       "moveSpeed": 0.02
     },
-
     {
       "x": 100,
       "y": 275,
