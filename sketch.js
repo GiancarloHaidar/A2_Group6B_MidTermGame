@@ -40,6 +40,9 @@ let imgAstronaut;
 let imgGround;
 let imgCloud1;
 let imgCloud2;
+let imgAlien;
+let imgAlien2;
+let imgCloudPlatform;
 
 let bgMusic;
 let jumpSound;
@@ -307,6 +310,9 @@ function setup() {
   imgGround = loadImage("Assets/ground.png");
   imgCloud1 = loadImage("Assets/Cloud1.png");
   imgCloud2 = loadImage("Assets/Cloud2.png");
+  imgAlien = loadImage("Assets/alien.png");
+  imgAlien2 = loadImage("Assets/alien2.png");
+  imgCloudPlatform = loadImage("Assets/cloud_platform2.png");
 
   _startIntro();
 }

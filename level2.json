@@ -2,14 +2,12 @@
   "startX": 386,
   "startY": 3900,
   "finishY": 275,
-
   "gravityMultiplier": 0.5,
   "jumpForceMultiplier": 0.75,
   "balanceMultiplier": 0.5,
   "colorBlindnessStrength": 0.72,
   "platformContrastReduction": 0.6,
   "energyDrainMultiplier": 0.7,
-
   "platforms": [
     {
       "x": 0,
@@ -311,7 +309,7 @@
       "laneKey": "R",
       "moving": true,
       "moveRange": 55,
-      "moveSpeed": 0.012
+      "moveSpeed": 0.002
     },
     {
       "x": 200,
@@ -324,7 +322,7 @@
       "laneKey": "C",
       "moving": true,
       "moveRange": 68,
-      "moveSpeed": 0.016
+      "moveSpeed": 0.002
     },
     {
       "x": 300,
@@ -337,7 +335,7 @@
       "laneKey": "L",
       "moving": true,
       "moveRange": 80,
-      "moveSpeed": 0.02
+      "moveSpeed": 0.002
     },
     {
       "x": 100,

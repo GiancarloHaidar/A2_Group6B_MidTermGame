@@ -183,7 +183,9 @@ function drawGame() {
   } else {
     _drawStarField(g);
     _drawCloudsL2(g);
+    _drawBigStars(g);
     _drawGroundScenery(g);
+    _drawSummitAliens(g);
   }
   _drawPlatforms(g);
   if (finishPlatform) _drawFinishMarker(g, finishPlatform);
@@ -267,13 +269,17 @@ function updatePlatformWobble() {
   for (let p of platforms) {
     if (p.zone === "ground" || p.isFinish) continue;
 
-    if (p.moving && currentLevel !== 2) {
-      let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
-      g.noFill();
-      g.stroke(100, 180, 255, round(30 + 40 * movePulse));
-      g.strokeWeight(1.5);
-      g.rect(p.x, p.y, p.w, p.h, 3);
-      g.noStroke();
+    // Altitude-scaled environmental wobble (all non-ground, non-finish platforms)
+    let altT = constrain((_groundY - p.baseX) / _climbPx, 0, 1);
+    // Use p.y for altitude fraction instead
+    let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
+    let wobbleAmp = PLAT_WOBBLE_AMP_MAX * pow(platAltFrac, PLAT_WOBBLE_CURVE);
+    p.wobblePhase += PLAT_WOBBLE_FREQ;
+    p.x = p.baseX + wobbleAmp * sin(p.wobblePhase);
+
+    // Moving platforms: additional independent left-right travel
+    if (p.moving) {
+      p.x += p.moveRange * sin(frameCount * p.moveSpeed + p.wobblePhase);
     }
   }
 }
@@ -476,7 +482,28 @@ function _drawColumnBackground(g) {
 function _drawPlatforms(g) {
   g.noStroke();
 
-  if (imgGround) {
+  if (currentLevel === 2 && imgCloudPlatform) {
+    const gp = platforms.find((p) => p.zone === "ground");
+    if (gp) {
+      let tw = imgCloudPlatform.width;
+      let th = imgCloudPlatform.height * CLOUD_PLAT_SCALE;
+      let drawY = gp.y - th + gp.h + CLOUD_PLAT_OFFSET_Y;
+      for (let tx = gp.x; tx < gp.x + gp.w; tx += tw) {
+        let drawW = min(tw, gp.x + gp.w - tx);
+        g.image(
+          imgCloudPlatform,
+          tx,
+          drawY,
+          drawW,
+          th,
+          0,
+          0,
+          drawW,
+          imgCloudPlatform.height,
+        );
+      }
+    }
+  } else if (imgGround) {
     const gp = platforms.find((p) => p.zone === "ground");
     if (gp) g.image(imgGround, gp.x, gp.y - 40, gp.w, imgGround.height);
   }
@@ -824,4 +851,64 @@ function gameKeyReleased(kc) {
   if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
   if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
   if (kc === DOWN_ARROW || kc === 83) _keys.down = false;
+}
+
+// ── Summit aliens (Level 2 only) ──────────────────────────────
+function _drawSummitAliens(g) {
+  if (!finishPlatform) return;
+  if (!imgAlien && !imgAlien2) return;
+
+  const fp = finishPlatform;
+  const bobAmt = 6;
+  const bobSpeed = 0.04;
+  const bob = bobAmt * sin(frameCount * bobSpeed);
+
+  const alienH = 64;
+  const alienW = 48;
+
+  if (imgAlien) {
+    let ax = fp.x - alienW - 8;
+    let ay = fp.y - alienH + bob;
+    g.noTint();
+    g.image(imgAlien, ax, ay, alienW, alienH);
+  }
+
+  if (imgAlien2) {
+    const bob2 = bobAmt * sin(frameCount * bobSpeed + PI);
+    let ax2 = fp.x + fp.w + 8;
+    let ay2 = fp.y - alienH + bob2;
+    g.noTint();
+    g.image(imgAlien2, ax2, ay2, alienW, alienH);
+  }
+}
+
+// ── Big glowing stars (Level 2 only) ─────────────────────────
+function _drawBigStars(g) {
+  const BIG_STAR_SEED = 42;
+  const COUNT = 30;
+
+  g.noStroke();
+  randomSeed(BIG_STAR_SEED);
+  for (let i = 0; i < COUNT; i++) {
+    let sx = random(PLAY_WIDTH);
+    let sy = random(LEVEL_HEIGHT * 0.85);
+
+    let altT = constrain(1 - sy / LEVEL_HEIGHT, 0, 1);
+    let sizeCurve = pow(altT, 1.4);
+    let baseR = lerp(1.0, 5.5, sizeCurve);
+
+    let twinkleOffset = random(TWO_PI);
+    let twinkle = 0.6 + 0.4 * sin(frameCount * 0.05 + twinkleOffset);
+    let alpha = round(lerp(60, 230, sizeCurve) * twinkle);
+
+    g.fill(240, 245, 255, alpha);
+    g.ellipse(sx, sy, baseR * 2, baseR * 2);
+
+    if (sizeCurve > 0.3) {
+      let glowA = round(alpha * 0.3);
+      g.fill(180, 210, 255, glowA);
+      g.ellipse(sx, sy, baseR * 5, baseR * 5);
+    }
+  }
+  randomSeed(floor(millis()));
 }
