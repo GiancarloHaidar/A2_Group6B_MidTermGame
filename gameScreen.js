@@ -376,12 +376,18 @@ function _drawPlatforms(g) {
     // This mirrors colour-perception fatigue — the world hardens as you tire.
     // altitudeFrac = 0 at bottom of playable zone, 1 at finish platform.
     let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
-    // Map fraction → alpha: low platforms ~55 (ghostly), upper ~220 (solid)
-    let platAlpha = round(lerp(55, 220, platAltFrac));
-    g.fill(p.color[0], p.color[1], p.color[2], platAlpha);
+    // Map fraction → alpha: low platforms 255 (fully solid), upper ~20 (nearly invisible)
+    let platAlpha = round(lerp(255, 20, platAltFrac));
+    // Flatten the colour range: all platforms draw from a dark steel-blue base.
+    // The JSON colours still shift slightly but we clamp them down so the hue
+    // difference is subtle — opacity does the heavy lifting, not colour.
+    let baseR = round(lerp(60, 85, platAltFrac));
+    let baseG = round(lerp(85, 110, platAltFrac));
+    let baseB = round(lerp(120, 150, platAltFrac));
+    g.fill(baseR, baseG, baseB, platAlpha);
     g.rect(p.x, p.y, p.w, p.h, 3);
 
-    let hlAlpha = map(p.w, 130, 225, 12, 42) * (platAlpha / 220);
+    let hlAlpha = map(p.w, 130, 225, 15, 50) * (platAlpha / 255);
     g.fill(255, 255, 255, constrain(hlAlpha, 12, 42));
     g.rect(p.x, p.y, p.w, 4, 3, 3, 0, 0);
 
