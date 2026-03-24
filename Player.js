@@ -231,7 +231,7 @@ class Player {
     if (minY < minX) {
       if (overlapTop < overlapBot) {
         this.y = p.y - this.h;
-        if (this.vy > 0) this.vy = 0;
+        if (this.vy > 0) this.vy = -this.vy * 0.5; // ← bounce
         this.onGround = true;
       } else {
         this.y = p.y + p.h;
