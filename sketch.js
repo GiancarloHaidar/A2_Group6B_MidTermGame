@@ -51,6 +51,7 @@ let fallingSound;
 let failSound;
 let winSound;
 let speakingSound;
+let bgMusic2;
 
 function preload() {
   level1Data = loadJSON("level1.json");
@@ -64,6 +65,7 @@ function preload() {
   winSound = loadSound("Assets/Win.mp3");
   speakingSound = loadSound("Assets/Speaking.mp3");
   imgFlag = loadImage("Assets/flag.png");
+  bgMusic2 = loadSound("Assets/Background2.mp3");
 }
 
 // ── Level helpers ─────────────────────────────────────────────
@@ -203,6 +205,7 @@ function _onScene2Continued() {
   }
   _loadLevel(1);
   currentScreen = "game";
+  _syncMusic();
 }
 
 // ── Blur helpers ──────────────────────────────────────────────
@@ -297,6 +300,7 @@ function setup() {
   _initBlur();
 
   bgMusic.setVolume(0.4);
+  bgMusic2.setVolume(0.4);
   jumpSound.setVolume(0.6);
   landingSound.setVolume(0.5);
   lowEnergySound.setVolume(0.6);
@@ -315,6 +319,23 @@ function setup() {
   _startIntro();
 }
 
+// ── Music helpers ─────────────────────────────────────────────
+// Call after any level change or screen transition.
+// Starts the correct track for the current level and stops the other.
+function _syncMusic() {
+  let isLevel2 = currentLevel === 2;
+  let activeTrack = isLevel2 ? bgMusic2 : bgMusic;
+  let inactiveTrack = isLevel2 ? bgMusic : bgMusic2;
+  if (inactiveTrack.isPlaying()) inactiveTrack.stop();
+  if (!activeTrack.isPlaying()) activeTrack.loop();
+}
+
+// Stop whichever track is currently playing (used on win / lose).
+function _stopMusic() {
+  if (bgMusic.isPlaying()) bgMusic.stop();
+  if (bgMusic2.isPlaying()) bgMusic2.stop();
+}
+
 function draw() {
   if (currentScreen === "intro") {
     background(135, 195, 255);
@@ -328,7 +349,7 @@ function draw() {
       drawGame();
       break;
     case "win":
-      if (bgMusic.isPlaying()) bgMusic.pause();
+      _stopMusic();
       if (!_starAwardedThisWin) {
         _totalStars++;
         _starAwardedThisWin = true;
@@ -338,7 +359,7 @@ function draw() {
       drawWinScreen();
       break;
     case "lose":
-      if (bgMusic.isPlaying()) bgMusic.pause();
+      _stopMusic();
       drawLoseScreen();
       break;
   }
@@ -534,6 +555,7 @@ function keyPressed() {
       _loadLevel(2);
       initGame();
       _initBlur();
+      _syncMusic();
     }
   }
 
@@ -544,7 +566,7 @@ function keyPressed() {
       currentScreen = "game";
       initGame();
       _initBlur();
-      if (!bgMusic.isPlaying()) bgMusic.loop();
+      _syncMusic();
     }
     // Level select from win/lose screen
     if (key === "1") {
@@ -553,7 +575,7 @@ function keyPressed() {
       currentScreen = "game";
       initGame();
       _initBlur();
-      if (!bgMusic.isPlaying()) bgMusic.loop();
+      _syncMusic();
     }
     if (key === "2") {
       _starAwardedThisWin = false;
@@ -561,7 +583,7 @@ function keyPressed() {
       currentScreen = "game";
       initGame();
       _initBlur();
-      if (!bgMusic.isPlaying()) bgMusic.loop();
+      _syncMusic();
     }
   }
 }

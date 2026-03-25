@@ -251,7 +251,7 @@ function checkWin() {
   if (onTop) {
     winTriggered = true;
     if (typeof winSound !== "undefined" && winSound.isLoaded()) winSound.play();
-    if (typeof bgMusic !== "undefined" && bgMusic.isPlaying()) bgMusic.pause();
+    _stopMusic();
   }
 }
 
