@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vertical Platformer – Level 1</title>
+    <title>Astroclimb - Vertical Platformer Game</title>
     <style>
       html,
       body {
@@ -47,7 +47,11 @@
         letter-spacing: 0.1em;
         animation: blink 1.2s step-start infinite;
       }
-      @keyframes blink { 50% { opacity: 0; } }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
 
       /* ── START MISSION image button ──────────────────────────── */
       #continueBtn {
@@ -59,16 +63,18 @@
         justify-content: center;
       }
       #continueBtn img {
-        width: 340px;              /* TUNABLE: button size               */
+        width: 340px; /* TUNABLE: button size               */
         cursor: pointer;
-        transition: transform 0.1s, filter 0.1s;
+        transition:
+          transform 0.1s,
+          filter 0.1s;
       }
       #continueBtn img:hover {
-        transform: scale(1.06);    /* TUNABLE: grow amount on hover      */
-        filter: brightness(1.2);   /* TUNABLE: glow brightness on hover  */
+        transform: scale(1.06); /* TUNABLE: grow amount on hover      */
+        filter: brightness(1.2); /* TUNABLE: glow brightness on hover  */
       }
       #continueBtn img:active {
-        transform: scale(0.97);    /* press-down feel                    */
+        transform: scale(0.97); /* press-down feel                    */
         filter: brightness(0.9);
       }
     </style>
@@ -90,15 +96,19 @@
       <span>CLICK TO START</span>
     </div>
     <script>
-      document.getElementById("startOverlay").addEventListener("click", function () {
-        this.style.display = "none"; // hide overlay
-        // _startIntro() is called in p5's setup(), which runs after this click.
-        // If p5 setup has already run (rare but possible), call it now.
-        if (typeof _startIntro === "function" && !window._introStarted) {
-          window._introStarted = true;
-          _startIntro();
-        }
-      }, { once: true });
+      document.getElementById("startOverlay").addEventListener(
+        "click",
+        function () {
+          this.style.display = "none"; // hide overlay
+          // _startIntro() is called in p5's setup(), which runs after this click.
+          // If p5 setup has already run (rare but possible), call it now.
+          if (typeof _startIntro === "function" && !window._introStarted) {
+            window._introStarted = true;
+            _startIntro();
+          }
+        },
+        { once: true },
+      );
     </script>
     <!-- Load order matters: constants → classes → visuals → screens → conductor -->
     <script src="constants.js"></script>
