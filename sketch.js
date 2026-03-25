@@ -288,6 +288,37 @@ function stampWorldBuffer() {
   ctx.filter = "none";
 }
 
+// ── Vignette overlay (Level 2 only) ──────────────────────────
+// Drawn after the world buffer stamp, before the UI, so the energy
+// bar and altitude indicators are never darkened.
+// Uses Canvas 2D radial gradient — same approach as the blur system.
+function _drawVignette() {
+  if (currentLevel !== 2) return;
+
+  let fatigueT = player ? 1 - constrain(player.energy / ENERGY_MAX, 0, 1) : 0;
+
+  let edgeAlpha = VIGNETTE_ALPHA_BASE + VIGNETTE_ALPHA_FATIGUE * fatigueT;
+
+  // Half-diagonal of the canvas — the gradient outer radius.
+  let halfDiag = sqrt(width * width + height * height) * 0.5;
+  let cx = width / 2;
+  let cy = height / 2;
+
+  // Inner clear radius shrinks slightly as fatigue grows.
+  let innerFrac = VIGNETTE_INNER_RADIUS - VIGNETTE_FATIGUE_SHRINK * fatigueT;
+  let innerR = halfDiag * innerFrac;
+
+  let ctx = drawingContext;
+  let grad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, halfDiag);
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, "rgba(0,0,0," + (edgeAlpha / 255).toFixed(3) + ")");
+
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+  ctx.restore();
+}
+
 // ── p5 lifecycle ──────────────────────────────────────────────
 
 function setup() {

@@ -15,6 +15,11 @@
 // ── Input state ──────────────────────────────────────────────
 let _keys = { left: false, right: false, down: false };
 
+// ── Input-delay queue (Level 2 only) ─────────────────────────
+// Each entry: { type: "press"|"release", kc: keyCode, ts: millis() }
+// Drained each frame; only events older than INPUT_DELAY_MS are applied.
+let _inputQueue = [];
+
 // ── Instructions visibility ───────────────────────────────────
 let _playerHasMoved = false;
 
@@ -127,6 +132,9 @@ function initGame() {
 
   player = new Player(levelData.startX, levelData.startY);
 
+  // Clear any queued input from a previous run.
+  _inputQueue = [];
+
   // Pass level multipliers to player so it can apply them each frame.
   player.gravityMult = _lvGravityMult;
   player.jumpForceMult = _lvJumpForceMult;
@@ -218,6 +226,18 @@ function initGame() {
 function drawGame() {
   if (!winTriggered) {
     updatePlatformWobble();
+
+    // ── Drain delayed-input queue (Level 2 only) ────────────
+    if (currentLevel === 2) {
+      let now = millis();
+      while (
+        _inputQueue.length > 0 &&
+        now - _inputQueue[0].ts >= INPUT_DELAY_MS
+      ) {
+        _applyInputEvent(_inputQueue.shift());
+      }
+    }
+
     player.inputLeft = _keys.left;
     player.inputRight = _keys.right;
     player.inputDown = _keys.down;
@@ -265,6 +285,9 @@ function drawGame() {
   if (currentLevel === 2 && _lvColorBlindStrength > 0) {
     _applyColorBlindOverlay(_lvColorBlindStrength);
   }
+
+  // ── Level 2: vignette / peripheral focus loss ────────────
+  _drawVignette();
 
   // ── Side panels ─────────────────────────────────────────
   _drawSidePanels(ox);
@@ -680,15 +703,6 @@ function _drawPlatforms(g) {
       g.noStroke();
     }
 
-    if (p.moving) {
-      let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
-      g.noFill();
-      g.stroke(100, 180, 255, round(30 + 40 * movePulse));
-      g.strokeWeight(1.5);
-      g.rect(p.x, p.y, p.w, p.h, 3);
-      g.noStroke();
-    }
-
     g.noStroke();
     g.fill(0, 0, 0, 10);
     g.rect(p.x + 2, p.y + p.h, p.w - 4, 5, 0, 0, 3, 3);
@@ -951,27 +965,60 @@ function getZoneLabel(altitude) {
 }
 
 // ── Input routing ─────────────────────────────────────────────
+// _applyInputEvent: shared logic for immediately applying a key event.
+function _applyInputEvent(evt) {
+  let kc = evt.kc;
+  if (evt.type === "press") {
+    if (kc === LEFT_ARROW || kc === 65) {
+      _keys.left = true;
+      _playerHasMoved = true;
+    }
+    if (kc === RIGHT_ARROW || kc === 68) {
+      _keys.right = true;
+      _playerHasMoved = true;
+    }
+    if (kc === DOWN_ARROW || kc === 83) {
+      _keys.down = true;
+      _playerHasMoved = true;
+    }
+    if (kc === UP_ARROW || kc === 87 || kc === 32) {
+      player.inputJump = true;
+      _playerHasMoved = true;
+    }
+  } else {
+    if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
+    if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
+    if (kc === DOWN_ARROW || kc === 83) _keys.down = false;
+  }
+}
+
 function gameKeyPressed(kc) {
-  if (kc === LEFT_ARROW || kc === 65) {
-    _keys.left = true;
-    _playerHasMoved = true;
-  }
-  if (kc === RIGHT_ARROW || kc === 68) {
-    _keys.right = true;
-    _playerHasMoved = true;
-  }
-  if (kc === DOWN_ARROW || kc === 83) {
-    _keys.down = true;
-    _playerHasMoved = true;
-  }
-  if (kc === UP_ARROW || kc === 87 || kc === 32) {
-    player.inputJump = true;
-    _playerHasMoved = true;
+  if (currentLevel === 2) {
+    // Queue the event; it will be applied after INPUT_DELAY_MS.
+    _inputQueue.push({ type: "press", kc: kc, ts: millis() });
+    // Still mark _playerHasMoved immediately so instructions disappear on first keypress.
+    if (
+      kc === LEFT_ARROW ||
+      kc === 65 ||
+      kc === RIGHT_ARROW ||
+      kc === 68 ||
+      kc === DOWN_ARROW ||
+      kc === 83 ||
+      kc === UP_ARROW ||
+      kc === 87 ||
+      kc === 32
+    ) {
+      _playerHasMoved = true;
+    }
+  } else {
+    _applyInputEvent({ type: "press", kc: kc });
   }
 }
 
 function gameKeyReleased(kc) {
-  if (kc === LEFT_ARROW || kc === 65) _keys.left = false;
-  if (kc === RIGHT_ARROW || kc === 68) _keys.right = false;
-  if (kc === DOWN_ARROW || kc === 83) _keys.down = false;
+  if (currentLevel === 2) {
+    _inputQueue.push({ type: "release", kc: kc, ts: millis() });
+  } else {
+    _applyInputEvent({ type: "release", kc: kc });
+  }
 }

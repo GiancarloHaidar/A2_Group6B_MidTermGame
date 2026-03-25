@@ -129,7 +129,7 @@ const PLAYER_SWAY_CHECKPOINT_DAMPEN = 0.2;
 //   1.6 = gentle start, noticeable from ~⅓ height, strong near top
 //   2.5 = nearly zero below halfway, concentrated at summit
 //
-const PLAT_WOBBLE_AMP_MAX = 12;
+const PLAT_WOBBLE_AMP_MAX = 14;
 // Maximum horizontal sweep at the summit (px).
 // 12 px stays well within the narrowest platform margin (130 px).
 // ↑ 18 = more summit challenge. Keep below 22 for fairness.
@@ -212,3 +212,45 @@ const LEVEL_HEIGHT = 4000;
 const FLAG_SCALE = 0.1; // resize — 1.0 = full size (~900px tall), 0.3 = manageable
 const FLAG_X = 150; // px from left edge of play column
 const FLAG_OFFSET_Y = 10; // px vertical nudge (positive = lower, negative = higher)
+
+// ── Vignette (Level 2 only) ──────────────────────────────────
+// A radial darkening drawn over the world buffer, under the UI.
+// Simulates reduced visual field / peripheral focus loss (MS symptom).
+// Intensity grows as energy drops — the more fatigued, the darker the edges.
+//
+const VIGNETTE_ALPHA_BASE = 90;
+// Darkness at the very edge of the screen at full energy (0–255).
+// 80 = clearly visible but not oppressive from the first step.
+// ↑ 120 = heavier immediate framing effect
+// ↓ 40  = barely noticeable until fatigue sets in
+
+const VIGNETTE_ALPHA_FATIGUE = 100;
+// Additional alpha added at full fatigue (fatigueT = 1).
+// totalAlpha = BASE + FATIGUE × fatigueT.  Max = 80 + 110 = 190.
+// 110 keeps edges dark but the play area centre remains legible.
+// ↑ 150 = very dramatic exhausted state
+// ↓ 60  = fatigue contribution stays subtle
+
+const VIGNETTE_INNER_RADIUS = 0.42;
+// Fraction of the half-diagonal at which the gradient starts (clear zone).
+// 0.42 = centre ~42% of the screen radius stays fully clear.
+// ↑ 0.55 = smaller clear window, edges encroach more
+// ↓ 0.30 = wider clear zone, vignette only at extreme edges
+
+const VIGNETTE_FATIGUE_SHRINK = 0.5;
+// How much the inner radius shrinks as fatigue rises.
+// innerRadius = BASE − SHRINK × fatigueT
+// 0.10 = at exhaustion the clear zone narrows by 10% of half-diagonal.
+// ↑ 0.18 = tunnel-vision feel at exhaustion
+
+// ── Input delay (Level 2 only) ───────────────────────────────
+// A FIFO queue holds input events for INPUT_DELAY_MS before applying them.
+// Simulates slowed nerve-signal transmission (MS symptom).
+// The delay is fixed — it does not scale with fatigue — so it feels like
+// a consistent processing lag rather than random unresponsiveness.
+//
+const INPUT_DELAY_MS = 150;
+// Milliseconds between key event and effect on the player.
+// 100 ms is perceptible but not frustrating (~6 frames at 60 fps).
+// ↑ 140 = more noticeable, direction changes feel sluggish
+// ↓ 60  = barely detectable — use if 100 feels too punishing
