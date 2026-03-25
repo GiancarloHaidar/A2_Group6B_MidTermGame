@@ -49,7 +49,7 @@ const BG_STAR_COUNT = 120;
 //   altThreshold : altitude fraction (0–1) below which this star is invisible
 //   altPeak      : fraction at which the star reaches full brightness
 let _fgStars = [];
-const FG_STAR_COUNT = 280;
+const FG_STAR_COUNT = 180;
 
 // ── Ground scenery layout ─────────────────────────────────────
 const SCENERY_GROUND_Y = 3950;
@@ -171,8 +171,8 @@ function initGame() {
       // Those near the very top (high altitude fraction) appear earliest
       // and burn brightest.
       let altFrac = 1 - starY / LEVEL_HEIGHT; // 0 = ground, 1 = summit
-      let threshold = max(0, 0.25 - altFrac * 0.3); // ground stars need 25%, summit 0%
-      let peak = max(threshold, altFrac * 0.7); // full glow at 70% of star's altitude
+      let threshold = max(0, 0.35 - altFrac * 0.25);
+      let peak = max(threshold, altFrac * 0.85);
 
       // Star appearance variety
       let tier = random(1);
@@ -649,10 +649,10 @@ function _drawPlatforms(g) {
       baseR = round(lerp(40, 15, platAltFrac));
       baseG = round(lerp(55, 25, platAltFrac));
       baseB = round(lerp(120, 45, platAltFrac));
-      platAlpha = 160; // ← single flat opacity for all platforms, 0–255
+      platAlpha = 95; // ← single flat opacity for all platforms, 0–255
     } else {
       // Level 1 — original logic unchanged
-      platAlpha = round(lerp(255, 40, platAltFrac));
+      platAlpha = round(lerp(255, 115, platAltFrac));
       baseR = round(lerp(60, 85, platAltFrac));
       baseG = round(lerp(85, 110, platAltFrac));
       baseB = round(lerp(120, 150, platAltFrac));
