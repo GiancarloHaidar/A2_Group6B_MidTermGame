@@ -22,6 +22,10 @@ let _starAwardedThisWin = false;
 let _starAnimTimer = 0;
 const STAR_ANIM_DURATION = 40;
 
+// ── One-shot music-stop flags (prevent _stopMusic re-firing every frame) ──
+let _winMusicStopped = false;
+let _loseMusicStopped = false;
+
 // ── Intro video ───────────────────────────────────────────────
 let _introVideo = null;
 let _continueBtnHandler = null;
@@ -224,7 +228,7 @@ function _onScene2Continued() {
 
 // ── Level 2 transition video ──────────────────────────────────
 // Plays Assets/Level2Video.mp4 when the player selects Level 2.
-// Mirrors the _playScene2 / _onScene2Ended pattern exactly.
+// Both speakingSound and bgMusic2 start together when the video begins.
 
 function _playLevel2Video() {
   // Black backdrop so the canvas doesn't bleed through behind the video
@@ -259,7 +263,11 @@ function _playLevel2Video() {
     console.warn("Level2Video play() failed — skipping to game.");
     _onLevel2VideoEnded();
   });
+
+  // Start speaking and background music 2 together when the video begins
   if (speakingSound && speakingSound.isLoaded()) speakingSound.play();
+  if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
+  if (bgMusic2 && bgMusic2.isLoaded() && !bgMusic2.isPlaying()) bgMusic2.loop();
 }
 
 function _onLevel2VideoEnded() {
@@ -286,13 +294,10 @@ function _onLevel2VideoContinued() {
   currentScreen = "game";
   initGame();
   _initBlur();
-  // Resume audio context (may be suspended after win/lose) then start Level 2 music
-  getAudioContext()
-    .resume()
-    .then(function () {
-      if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
-      if (bgMusic2 && !bgMusic2.isPlaying()) bgMusic2.loop();
-    });
+  // Stop speaking audio now that we're entering gameplay
+  if (speakingSound && speakingSound.isPlaying()) speakingSound.stop();
+  // bgMusic2 is already looping — started when the video began
+  if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
 }
 
 // ── Blur helpers ──────────────────────────────────────────────
@@ -467,8 +472,12 @@ function draw() {
       drawGame();
       break;
     case "win":
-      _stopMusic();
       if (!_starAwardedThisWin) {
+        // Stop music exactly once when the win screen first appears
+        if (!_winMusicStopped) {
+          _stopMusic();
+          _winMusicStopped = true;
+        }
         _totalStars++;
         _starAwardedThisWin = true;
         _starAnimTimer = 0;
@@ -477,7 +486,11 @@ function draw() {
       drawWinScreen();
       break;
     case "lose":
-      _stopMusic();
+      // Stop music exactly once when the lose screen first appears
+      if (!_loseMusicStopped) {
+        _stopMusic();
+        _loseMusicStopped = true;
+      }
       drawLoseScreen();
       break;
   }
@@ -677,7 +690,9 @@ function keyPressed() {
 
   if (currentScreen === "win" || currentScreen === "lose") {
     if (key === "r" || key === "R") {
-      // Replay the same level
+      // Replay the same level — reset one-shot flags before re-entering game
+      _winMusicStopped = false;
+      _loseMusicStopped = false;
       _starAwardedThisWin = false;
       currentScreen = "game";
       initGame();
@@ -686,6 +701,8 @@ function keyPressed() {
     }
     // Level select from win/lose screen
     if (key === "1") {
+      _winMusicStopped = false;
+      _loseMusicStopped = false;
       _starAwardedThisWin = false;
       _loadLevel(1);
       currentScreen = "game";
@@ -694,7 +711,9 @@ function keyPressed() {
       _syncMusic();
     }
     if (key === "2") {
-      // Stop any playing music immediately; bgMusic2 starts on button click
+      // Reset one-shot flags; bgMusic2 starts with the Level 2 video
+      _winMusicStopped = false;
+      _loseMusicStopped = false;
       _stopMusic();
       _playLevel2Video();
     }
