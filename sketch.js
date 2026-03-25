@@ -38,11 +38,9 @@ let imgHouse;
 let imgTree;
 let imgAstronaut;
 let imgGround;
+let imgGroundL2;
 let imgCloud1;
 let imgCloud2;
-let imgAlien;
-let imgAlien2;
-let imgCloudPlatform;
 
 let bgMusic;
 let jumpSound;
@@ -308,11 +306,9 @@ function setup() {
   imgTree = loadImage("Assets/tree.png");
   imgAstronaut = loadImage("Assets/astronaut.png");
   imgGround = loadImage("Assets/ground.png");
+  imgGroundL2 = loadImage("Assets/cloud_platform1.png");
   imgCloud1 = loadImage("Assets/Cloud1.png");
   imgCloud2 = loadImage("Assets/Cloud2.png");
-  imgAlien = loadImage("Assets/alien.png");
-  imgAlien2 = loadImage("Assets/alien2.png");
-  imgCloudPlatform = loadImage("Assets/cloud_platform2.png");
 
   _startIntro();
 }

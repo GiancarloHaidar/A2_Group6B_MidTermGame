@@ -207,6 +207,3 @@ const CAM_ANCHOR_Y = 0.55;
 // ── Level / play column ──────────────────────────────────────
 const PLAY_WIDTH = 800;
 const LEVEL_HEIGHT = 4000;
-
-const CLOUD_PLAT_OFFSET_Y = 50;
-const CLOUD_PLAT_SCALE = 0.25;
