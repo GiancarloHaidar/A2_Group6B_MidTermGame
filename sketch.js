@@ -204,7 +204,7 @@ function _playScene2() {
 function _onScene2Ended() {
   if (_introVideo) _introVideo.pause();
 
-  document.getElementById("continueBtnImg").src = "Assets/StartButton.png";
+  document.getElementById("continueBtnImg").src = "Assets/Continue.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
   _setContinueBtnHandler(_onScene2Continued);
@@ -259,16 +259,13 @@ function _playLevel2Video() {
     console.warn("Level2Video play() failed — skipping to game.");
     _onLevel2VideoEnded();
   });
-
-  // Switch to Level 2 music during the cutscene
-  if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
-  if (bgMusic2 && !bgMusic2.isPlaying()) bgMusic2.loop();
+  if (speakingSound && speakingSound.isLoaded()) speakingSound.play();
 }
 
 function _onLevel2VideoEnded() {
   if (_introVideo) _introVideo.pause();
 
-  document.getElementById("continueBtnImg").src = "Assets/StartButton.png";
+  document.getElementById("continueBtnImg").src = "Assets/Continue.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
   _setContinueBtnHandler(_onLevel2VideoContinued);
@@ -289,7 +286,13 @@ function _onLevel2VideoContinued() {
   currentScreen = "game";
   initGame();
   _initBlur();
-  _syncMusic();
+  // Resume audio context (may be suspended after win/lose) then start Level 2 music
+  getAudioContext()
+    .resume()
+    .then(function () {
+      if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
+      if (bgMusic2 && !bgMusic2.isPlaying()) bgMusic2.loop();
+    });
 }
 
 // ── Blur helpers ──────────────────────────────────────────────
@@ -667,6 +670,7 @@ function keyPressed() {
 
     // TEMP: press T to switch to Level 2 for testing (plays transition video)
     if (key === "t" || key === "T") {
+      _stopMusic();
       _playLevel2Video();
     }
   }
@@ -690,7 +694,8 @@ function keyPressed() {
       _syncMusic();
     }
     if (key === "2") {
-      // Play the Level 2 transition video; it will launch the level on continue.
+      // Stop any playing music immediately; bgMusic2 starts on button click
+      _stopMusic();
       _playLevel2Video();
     }
   }
