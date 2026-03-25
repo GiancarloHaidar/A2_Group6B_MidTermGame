@@ -207,3 +207,8 @@ const CAM_ANCHOR_Y = 0.55;
 // ── Level / play column ──────────────────────────────────────
 const PLAY_WIDTH = 800;
 const LEVEL_HEIGHT = 4000;
+
+// ── Level 2 flag ─────────────────────────────────────────────
+const FLAG_SCALE = 0.1; // resize — 1.0 = full size (~900px tall), 0.3 = manageable
+const FLAG_X = 150; // px from left edge of play column
+const FLAG_OFFSET_Y = 10; // px vertical nudge (positive = lower, negative = higher)

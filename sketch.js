@@ -41,6 +41,7 @@ let imgGround;
 let imgGroundL2;
 let imgCloud1;
 let imgCloud2;
+let imgFlag;
 
 let bgMusic;
 let jumpSound;
@@ -62,6 +63,7 @@ function preload() {
   failSound = loadSound("Assets/Fail.mp3");
   winSound = loadSound("Assets/Win.mp3");
   speakingSound = loadSound("Assets/Speaking.mp3");
+  imgFlag = loadImage("Assets/flag.png");
 }
 
 // ── Level helpers ─────────────────────────────────────────────

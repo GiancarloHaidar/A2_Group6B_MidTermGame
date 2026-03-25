@@ -331,7 +331,8 @@ function _drawClouds(g) {
 
 // ── Ground scenery ────────────────────────────────────────────
 function _drawGroundScenery(g) {
-  if (!imgTree || !imgHouse) return;
+  if (currentLevel === 1 && (!imgTree || !imgHouse)) return;
+  if (currentLevel === 2 && !imgTree) return;
 
   for (let t of SCENERY_TREES) {
     let tw = imgTree.width * t.scale;
@@ -349,6 +350,10 @@ function _drawGroundScenery(g) {
       hw,
       hh,
     );
+  } else if (currentLevel === 2 && imgFlag) {
+    let fw = imgFlag.width * FLAG_SCALE;
+    let fh = imgFlag.height * FLAG_SCALE;
+    g.image(imgFlag, FLAG_X, SCENERY_GROUND_Y - fh + FLAG_OFFSET_Y, fw, fh);
   }
 }
 
