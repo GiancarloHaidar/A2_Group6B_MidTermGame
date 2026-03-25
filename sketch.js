@@ -24,6 +24,7 @@ const STAR_ANIM_DURATION = 40;
 
 // ── Intro video ───────────────────────────────────────────────
 let _introVideo = null;
+let _continueBtnHandler = null;
 
 // ── World graphics buffer ─────────────────────────────────────
 let _worldBuffer = null;
@@ -128,17 +129,29 @@ function _playIntroVideo() {
   if (bgMusic && !bgMusic.isPlaying()) bgMusic.loop();
 }
 
+// Removes any previously registered #continueBtn handler before adding the new
+// one. Prevents stale listeners from prior video flows firing unexpectedly.
+function _setContinueBtnHandler(fn) {
+  const btn = document.getElementById("continueBtn");
+  if (_continueBtnHandler) {
+    btn.removeEventListener("click", _continueBtnHandler);
+  }
+  _continueBtnHandler = fn;
+  btn.addEventListener("click", fn, { once: true });
+}
+
 function _onIntroEnded() {
   if (_introVideo) _introVideo.pause();
 
   document.getElementById("continueBtnImg").src = "Assets/Continue.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
-  btn.addEventListener("click", _onContinueClicked, { once: true });
+  _setContinueBtnHandler(_onContinueClicked);
 }
 
 function _onContinueClicked() {
   document.getElementById("continueBtn").style.display = "none";
+  _continueBtnHandler = null;
 
   if (_introVideo) {
     _introVideo.style.display = "none";
@@ -194,17 +207,88 @@ function _onScene2Ended() {
   document.getElementById("continueBtnImg").src = "Assets/StartButton.png";
   const btn = document.getElementById("continueBtn");
   btn.style.display = "flex";
-  btn.addEventListener("click", _onScene2Continued, { once: true });
+  _setContinueBtnHandler(_onScene2Continued);
 }
 
 function _onScene2Continued() {
   document.getElementById("continueBtn").style.display = "none";
+  _continueBtnHandler = null;
   if (_introVideo) {
     _introVideo.style.display = "none";
     _introVideo = null;
   }
   _loadLevel(1);
   currentScreen = "game";
+  _syncMusic();
+}
+
+// ── Level 2 transition video ──────────────────────────────────
+// Plays Assets/Level2Video.mp4 when the player selects Level 2.
+// Mirrors the _playScene2 / _onScene2Ended pattern exactly.
+
+function _playLevel2Video() {
+  // Black backdrop so the canvas doesn't bleed through behind the video
+  let backdrop = document.getElementById("videoBackdrop");
+  if (!backdrop) {
+    backdrop = document.createElement("div");
+    backdrop.id = "videoBackdrop";
+    backdrop.style.cssText =
+      "position:fixed;inset:0;background:#000;z-index:9;";
+    document.body.appendChild(backdrop);
+  }
+  backdrop.style.display = "block";
+
+  _introVideo = document.getElementById("introVideo");
+
+  _introVideo.src = "Assets/Level2Video.mp4";
+  _introVideo.muted = true;
+
+  _introVideo.style.display = "block";
+  _introVideo.style.position = "fixed";
+  _introVideo.style.width = "90%";
+  _introVideo.style.height = "90%";
+  _introVideo.style.top = "50%";
+  _introVideo.style.left = "50%";
+  _introVideo.style.transform = "translate(-50%, -50%)";
+  _introVideo.style.objectFit = "contain";
+  _introVideo.style.zIndex = "10";
+
+  _introVideo.addEventListener("ended", _onLevel2VideoEnded, { once: true });
+
+  _introVideo.play().catch(() => {
+    console.warn("Level2Video play() failed — skipping to game.");
+    _onLevel2VideoEnded();
+  });
+
+  // Switch to Level 2 music during the cutscene
+  if (bgMusic && bgMusic.isPlaying()) bgMusic.stop();
+  if (bgMusic2 && !bgMusic2.isPlaying()) bgMusic2.loop();
+}
+
+function _onLevel2VideoEnded() {
+  if (_introVideo) _introVideo.pause();
+
+  document.getElementById("continueBtnImg").src = "Assets/StartButton.png";
+  const btn = document.getElementById("continueBtn");
+  btn.style.display = "flex";
+  _setContinueBtnHandler(_onLevel2VideoContinued);
+}
+
+function _onLevel2VideoContinued() {
+  document.getElementById("continueBtn").style.display = "none";
+  _continueBtnHandler = null;
+  if (_introVideo) {
+    _introVideo.style.display = "none";
+    _introVideo = null;
+  }
+  // Remove the black backdrop now that we're entering the game
+  let backdrop = document.getElementById("videoBackdrop");
+  if (backdrop) backdrop.style.display = "none";
+  _starAwardedThisWin = false;
+  _loadLevel(2);
+  currentScreen = "game";
+  initGame();
+  _initBlur();
   _syncMusic();
 }
 
@@ -581,12 +665,9 @@ function keyPressed() {
   if (currentScreen === "game") {
     gameKeyPressed(keyCode);
 
-    // TEMP: press T to instantly switch to Level 2 for testing
+    // TEMP: press T to switch to Level 2 for testing (plays transition video)
     if (key === "t" || key === "T") {
-      _loadLevel(2);
-      initGame();
-      _initBlur();
-      _syncMusic();
+      _playLevel2Video();
     }
   }
 
@@ -609,12 +690,8 @@ function keyPressed() {
       _syncMusic();
     }
     if (key === "2") {
-      _starAwardedThisWin = false;
-      _loadLevel(2);
-      currentScreen = "game";
-      initGame();
-      _initBlur();
-      _syncMusic();
+      // Play the Level 2 transition video; it will launch the level on continue.
+      _playLevel2Video();
     }
   }
 }
