@@ -237,7 +237,7 @@ const VIGNETTE_INNER_RADIUS = 0.42;
 // ↑ 0.55 = smaller clear window, edges encroach more
 // ↓ 0.30 = wider clear zone, vignette only at extreme edges
 
-const VIGNETTE_FATIGUE_SHRINK = 0.5;
+const VIGNETTE_FATIGUE_SHRINK = 0.3;
 // How much the inner radius shrinks as fatigue rises.
 // innerRadius = BASE − SHRINK × fatigueT
 // 0.10 = at exhaustion the clear zone narrows by 10% of half-diagonal.
