@@ -267,13 +267,16 @@ function updatePlatformWobble() {
   for (let p of platforms) {
     if (p.zone === "ground" || p.isFinish) continue;
 
-    if (p.moving && currentLevel !== 2) {
-      let movePulse = 0.3 + 0.3 * sin(frameCount * 0.06 + p.wobblePhase);
-      g.noFill();
-      g.stroke(100, 180, 255, round(30 + 40 * movePulse));
-      g.strokeWeight(1.5);
-      g.rect(p.x, p.y, p.w, p.h, 3);
-      g.noStroke();
+    if (p.moving) {
+      // Moving platforms use only their own defined range — no extra wobble
+      p.wobblePhase += PLAT_WOBBLE_FREQ;
+      p.x = p.baseX + p.moveRange * sin(frameCount * p.moveSpeed);
+    } else {
+      // Static platforms get altitude-scaled environmental wobble only
+      let platAltFrac = constrain((_groundY - p.y) / _climbPx, 0, 1);
+      let wobbleAmp = PLAT_WOBBLE_AMP_MAX * pow(platAltFrac, PLAT_WOBBLE_CURVE);
+      p.wobblePhase += PLAT_WOBBLE_FREQ;
+      p.x = p.baseX + wobbleAmp * sin(p.wobblePhase);
     }
   }
 }
@@ -336,15 +339,17 @@ function _drawGroundScenery(g) {
     g.image(imgTree, t.x, SCENERY_GROUND_Y - th + SCENERY_TREE_SINK, tw, th);
   }
 
-  let hw = imgHouse.width * SCENERY_HOUSE.scale;
-  let hh = imgHouse.height * SCENERY_HOUSE.scale;
-  g.image(
-    imgHouse,
-    SCENERY_HOUSE.x,
-    SCENERY_GROUND_Y - hh + SCENERY_HOUSE_SINK,
-    hw,
-    hh,
-  );
+  if (currentLevel === 1) {
+    let hw = imgHouse.width * SCENERY_HOUSE.scale;
+    let hh = imgHouse.height * SCENERY_HOUSE.scale;
+    g.image(
+      imgHouse,
+      SCENERY_HOUSE.x,
+      SCENERY_GROUND_Y - hh + SCENERY_HOUSE_SINK,
+      hw,
+      hh,
+    );
+  }
 }
 
 // ── Finish marker ─────────────────────────────────────────────
@@ -513,7 +518,7 @@ function _drawPlatforms(g) {
       baseR = round(lerp(40, 15, platAltFrac));
       baseG = round(lerp(55, 25, platAltFrac));
       baseB = round(lerp(120, 45, platAltFrac));
-      platAlpha = round(lerp(160, 110, platAltFrac));
+      platAlpha = 160; // ← single flat opacity for all platforms, 0–255
     } else {
       // Level 1 — original logic unchanged
       platAlpha = round(lerp(255, 40, platAltFrac));

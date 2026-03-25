@@ -309,7 +309,7 @@
       "laneKey": "R",
       "moving": true,
       "moveRange": 55,
-      "moveSpeed": 0.002
+      "moveSpeed": 0.004
     },
     {
       "x": 200,
@@ -322,7 +322,7 @@
       "laneKey": "C",
       "moving": true,
       "moveRange": 68,
-      "moveSpeed": 0.002
+      "moveSpeed": 0.004
     },
     {
       "x": 300,
@@ -335,7 +335,7 @@
       "laneKey": "L",
       "moving": true,
       "moveRange": 80,
-      "moveSpeed": 0.002
+      "moveSpeed": 0.004
     },
     {
       "x": 100,
