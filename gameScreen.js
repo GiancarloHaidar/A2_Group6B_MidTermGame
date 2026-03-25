@@ -672,7 +672,7 @@ function _drawPlatforms(g) {
       baseR = round(lerp(40, 15, platAltFrac));
       baseG = round(lerp(55, 25, platAltFrac));
       baseB = round(lerp(120, 45, platAltFrac));
-      platAlpha = 95; // ← single flat opacity for all platforms, 0–255
+      platAlpha = 75; // ← single flat opacity for all platforms, 0–255
     } else {
       // Level 1 — original logic unchanged
       platAlpha = round(lerp(255, 115, platAltFrac));
