@@ -42,6 +42,15 @@ let _lvEnergyDrainMult = 1.0;
 let _bgStars = [];
 const BG_STAR_COUNT = 120;
 
+// ── Foreground glowing stars (Level 2 only) ───────────────────
+// These stars appear gradually as the player climbs toward space.
+// Density and brightness scale with altitude (higher = more stars).
+// Stars are absent near the ground and fully present at the summit.
+//   altThreshold : altitude fraction (0–1) below which this star is invisible
+//   altPeak      : fraction at which the star reaches full brightness
+let _fgStars = [];
+const FG_STAR_COUNT = 280;
+
 // ── Ground scenery layout ─────────────────────────────────────
 const SCENERY_GROUND_Y = 3950;
 const SCENERY_TREE_SINK = 18;
@@ -144,6 +153,64 @@ function initGame() {
       brightness: random(120, 255),
       twinkleOffset: random(TWO_PI),
     });
+  }
+
+  // ── Regenerate foreground glowing stars (Level 2 only) ───
+  // Stars are distributed with heavy bias toward the upper half of the
+  // level. Each star has an altThreshold below which it is fully invisible,
+  // and an altPeak at which it reaches full brightness — this makes them
+  // "emerge" as the player climbs into the upper atmosphere and space.
+  _fgStars = [];
+  if (currentLevel === 2) {
+    for (let i = 0; i < FG_STAR_COUNT; i++) {
+      // Bias star positions toward the top (lower y values) using pow()
+      let rawFrac = pow(random(1), 1.6); // 0 = top, 1 = bottom
+      let starY = rawFrac * LEVEL_HEIGHT;
+
+      // Stars only start appearing once the player is at least 30% up.
+      // Those near the very top (high altitude fraction) appear earliest
+      // and burn brightest.
+      let altFrac = 1 - starY / LEVEL_HEIGHT; // 0 = ground, 1 = summit
+      let threshold = max(0, 0.25 - altFrac * 0.3); // ground stars need 25%, summit 0%
+      let peak = max(threshold, altFrac * 0.7); // full glow at 70% of star's altitude
+
+      // Star appearance variety
+      let tier = random(1);
+      let baseR, glowR;
+      if (tier < 0.55) {
+        // Common small white/blue-white
+        baseR = random(0.8, 1.6);
+        glowR = baseR * random(2.5, 4.0);
+      } else if (tier < 0.82) {
+        // Medium bright
+        baseR = random(1.5, 2.4);
+        glowR = baseR * random(2.8, 5.0);
+      } else {
+        // Rare large sparkler
+        baseR = random(2.2, 3.5);
+        glowR = baseR * random(3.5, 6.0);
+      }
+
+      // Slight colour tint variety (mostly white/blue, occasional warm)
+      let hue = random(1);
+      let cr = hue < 0.15 ? 255 : hue < 0.3 ? 200 : 220;
+      let cg = hue < 0.15 ? 220 : hue < 0.3 ? 210 : 230;
+      let cb = hue < 0.15 ? 150 : hue < 0.3 ? 255 : 255;
+
+      _fgStars.push({
+        x: random(PLAY_WIDTH),
+        y: starY,
+        r: baseR,
+        glowR: glowR,
+        altThreshold: threshold,
+        altPeak: peak,
+        twinkleOffset: random(TWO_PI),
+        twinkleSpeed: random(0.025, 0.07),
+        cr,
+        cg,
+        cb,
+      });
+    }
   }
 }
 
@@ -293,11 +360,70 @@ function refillCheckpoint() {
 // ── Star field (Level 2 only) ─────────────────────────────────
 function _drawStarField(g) {
   g.noStroke();
+
+  // Background star layer — sparse, dim, covers full level height
   for (let s of _bgStars) {
     let twinkle = 0.6 + 0.4 * sin(frameCount * 0.04 + s.twinkleOffset);
     let alpha = round(s.brightness * twinkle);
     g.fill(230, 235, 255, alpha);
     g.ellipse(s.x, s.y, s.r * 2, s.r * 2);
+  }
+
+  // Foreground glowing stars — emerge gradually as the player climbs.
+  // Each star's visibility is gated by the current camera altitude so
+  // stars only "switch on" when the player is high enough to see them.
+  let camAltFrac = constrain(1 - (cam.y + height * 0.5) / LEVEL_HEIGHT, 0, 1);
+
+  for (let s of _fgStars) {
+    // How far past this star's threshold the camera currently is
+    let progress = constrain(
+      map(camAltFrac, s.altThreshold, s.altPeak, 0, 1),
+      0,
+      1,
+    );
+    if (progress <= 0) continue;
+
+    // Also fade based on the star's own altitude in the level (higher = brighter)
+    let starAltFrac = 1 - s.y / LEVEL_HEIGHT;
+    let altBoost = constrain(map(starAltFrac, 0.2, 0.9, 0.2, 1.0), 0.2, 1.0);
+
+    let twinkle =
+      0.55 + 0.45 * sin(frameCount * s.twinkleSpeed + s.twinkleOffset);
+    let masterAlpha = progress * altBoost * twinkle;
+
+    // ── Soft outer glow ─────────────────────────────────────
+    let glowAlpha = round(masterAlpha * 28);
+    if (glowAlpha > 2) {
+      g.fill(s.cr, s.cg, s.cb, glowAlpha);
+      g.ellipse(s.x, s.y, s.glowR * 2.8, s.glowR * 2.8);
+    }
+
+    // ── Inner glow ring ──────────────────────────────────────
+    let midAlpha = round(masterAlpha * 65);
+    if (midAlpha > 3) {
+      g.fill(s.cr, s.cg, s.cb, midAlpha);
+      g.ellipse(s.x, s.y, s.glowR * 1.5, s.glowR * 1.5);
+    }
+
+    // ── Bright core ──────────────────────────────────────────
+    let coreAlpha = round(masterAlpha * 220);
+    if (coreAlpha > 5) {
+      g.fill(s.cr, s.cg, s.cb, coreAlpha);
+      g.ellipse(s.x, s.y, s.r * 2, s.r * 2);
+    }
+
+    // ── Cross sparkle on larger stars ────────────────────────
+    if (s.r > 2.0 && masterAlpha > 0.4) {
+      let lineAlpha = round(masterAlpha * 80 * twinkle);
+      if (lineAlpha > 5) {
+        g.stroke(s.cr, s.cg, s.cb, lineAlpha);
+        g.strokeWeight(0.6);
+        let arm = s.glowR * 1.1;
+        g.line(s.x - arm, s.y, s.x + arm, s.y);
+        g.line(s.x, s.y - arm, s.x, s.y + arm);
+        g.noStroke();
+      }
+    }
   }
 }
 
